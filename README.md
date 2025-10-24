@@ -1,2 +1,2 @@
 # VoxBotanica
-A procedural generation framework for creating voxel-based flora using algorithmic plant models and voxel aesthetics.
+**VoxBotanica** is a procedural generation tool developed as part of an Honours Project at **Abertay University**. It explores methods for generating voxel-based flora, combining algorithmic plant models with a block-style aesthetic suited for voxel and sandbox games. The project aims to streamline the creation of organic assets such as trees and plants, providing developers with a flexible framework that produces visually consistent, game-ready voxel vegetation through procedural techniques inspired by natural growth systems.

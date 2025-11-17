@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using AYellowpaper.SerializedCollections;
@@ -12,8 +13,12 @@ public class LSystemGenerator : MonoBehaviour
 	public string Axiom = "F";
 	[MinValue(1)]
 	public int Iterations = 4;
-	[Range(0f, 180f)]
+	[Range(5f, 90f)]
 	public float Angle = 25f;
+	[MinValue(0f)]
+	public float TrunkHeight = 3f;
+	[MinValue(0f)]
+	public float MaxHeight = 20f;
 
 	[SerializeField]
 	private SerializedDictionary<string, string> _Rules = new()
@@ -31,6 +36,12 @@ public class LSystemGenerator : MonoBehaviour
 		Debug.Log(_CurrentString);
 	}
 
+	[Button]
+	private void Clear()
+	{
+		_CurrentString = string.Empty;
+	}
+
 	private void OnDrawGizmos()
 	{
 		if (string.IsNullOrEmpty(_CurrentString))
@@ -44,33 +55,50 @@ public class LSystemGenerator : MonoBehaviour
 		Gizmos.color = Color.green;
 
 		foreach (char c in _CurrentString)
+		{
+			float height = position.y;
+
+			// Avoid growth beyond maximum height.
+			if (height >= MaxHeight)
+				break;
+
 			switch (c)
 			{
 			case 'F':
 			{
 				Vector3 newPos = position + direction * LENGTH;
-				Gizmos.DrawLine(position, newPos);
+
+				// Only draw if under allowed max height.
+				if (newPos.y <= MaxHeight)
+					Gizmos.DrawLine(position, newPos);
+
 				position = newPos;
 				break;
 			}
 			case '+':
 			{
-				direction = Quaternion.Euler(0f, 0f, Angle) * direction;
+				// No rotation until trunk height reached.
+				if (height >= TrunkHeight)
+					direction = Quaternion.Euler(0f, 0f, Angle) * direction;
 				break;
 			}
 			case '-':
 			{
-				direction = Quaternion.Euler(0f, 0f, -Angle) * direction;
+				// No rotation until trunk height reached.
+				if (height >= TrunkHeight)
+					direction = Quaternion.Euler(0f, 0f, -Angle) * direction;
 				break;
 			}
 			case '[':
 			{
-				stack.Push(new TurtleState(position, direction));
+				// Don’t store branches before trunk height.
+				if (height >= TrunkHeight)
+					stack.Push(new TurtleState(position, direction));
 				break;
 			}
 			case ']':
 			{
-				if (stack.Count <= 0)
+				if (!(height >= TrunkHeight) || stack.Count <= 0)
 					break;
 
 				TurtleState state = stack.Pop();
@@ -79,6 +107,7 @@ public class LSystemGenerator : MonoBehaviour
 				break;
 			}
 			}
+		}
 	}
 
 	private struct TurtleState

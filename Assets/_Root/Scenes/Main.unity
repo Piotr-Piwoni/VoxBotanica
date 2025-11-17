@@ -150,9 +150,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Axiom: F
   Iterations: 4
-  Angle: 30
+  Angle: 32.6
   TrunkHeight: 3
   MaxHeight: 20
+  LeafThickness: 30
+  LeafDensity: 3
   _Rules:
     _serializedList:
     - Key: F
@@ -209,7 +211,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 20.000122, y: -20}
+  m_AnchoredPosition: {x: 20.000244, y: -20}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &138099298

@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using AYellowpaper.SerializedCollections;
-using UnityEngine;
 using Sirenix.OdinInspector;
+using UnityEngine;
 
 namespace VoxBotanica
 {
@@ -33,33 +33,18 @@ public class LSystemGenerator : MonoBehaviour
 	[SerializeField]
 	private GameObject _VoxelPrefab;
 
+	private readonly HashSet<Vector3Int> _BranchVoxels = new();
+	private readonly HashSet<Vector3Int> _Voxels = new();
 	private string _CurrentString;
-	private HashSet<Vector3Int> _Voxels = new();
-	private HashSet<Vector3Int> _BranchVoxels = new();
 
-
-	[Button]
-	public void Generate()
+	private void Start()
 	{
 		Clear();
-
-		_CurrentString = GenerateLSystem();
-		Debug.Log(_CurrentString);
-
-		GenerateVoxelsFromString();
-		SpawnVoxels();
-		//GenerateLeaves();
 	}
 
-	[Button]
-	private void Clear()
+	private void OnApplicationQuit()
 	{
-		_CurrentString = string.Empty;
-		_Voxels.Clear();
-		_BranchVoxels.Clear();
-		// Clear existing voxels.
-		foreach (Transform child in transform)
-			Destroy(child.gameObject);
+		Clear();
 	}
 
 	private void OnDrawGizmos()
@@ -128,6 +113,167 @@ public class LSystemGenerator : MonoBehaviour
 			}
 			}
 		}
+	}
+
+
+	[Button]
+	public void Generate()
+	{
+		Clear();
+
+		_CurrentString = GenerateLSystem();
+		Debug.Log(_CurrentString);
+
+		GenerateVoxelsFromString();
+		SpawnVoxels();
+		//GenerateLeaves();
+	}
+
+	[Button]
+	private void Clear()
+	{
+		_CurrentString = string.Empty;
+		_Voxels.Clear();
+		_BranchVoxels.Clear();
+		// Clear existing voxels.
+		foreach (Transform child in transform)
+			Destroy(child.gameObject);
+	}
+
+	[Button("Spawn Leaves")]
+	private void GenerateLeaves()
+	{
+		if (_VoxelPrefab == null || _Voxels.Count == 0 ||
+		    _BranchVoxels.Count == 0)
+		{
+			Debug.LogWarning(
+				"No prefab, no trunk voxels, or no branch voxels.");
+			return;
+		}
+
+		List<int> trunkHeights = _Voxels.Select(v => v.y).Distinct()
+			.OrderBy(y => y).ToList();
+		int maxY = trunkHeights.Max();
+
+		HashSet<Vector3Int>
+			usedBranchVoxels = new(); // to avoid double-counting
+
+		var i = 0;
+		while (i < trunkHeights.Count)
+		{
+			int y = trunkHeights[i];
+			if (y < TrunkHeight)
+			{
+				i++;
+				continue;
+			}
+
+			Vector3Int trunkVoxel = _Voxels.First(v => v.y == y);
+
+			List<List<Vector3Int>> branches = new();
+
+			// Find branch starting nodes around trunk
+			foreach (Vector3Int offset in new Vector3Int[]
+			         {
+				         new(-1, 0, 0),
+				         new(1, 0, 0),
+				         new(0, 0, -1),
+				         new(0, 0, 1)
+			         })
+			{
+				Vector3Int start = trunkVoxel + offset;
+				if (_BranchVoxels.Contains(start) &&
+				    !usedBranchVoxels.Contains(start))
+				{
+					// BFS/flood-fill to get full branch
+					List<Vector3Int> fullBranch = new();
+					Queue<Vector3Int> queue = new();
+					queue.Enqueue(start);
+					usedBranchVoxels.Add(start);
+
+					while (queue.Count > 0)
+					{
+						Vector3Int current = queue.Dequeue();
+						fullBranch.Add(current);
+
+						// Check all 6 neighbours
+						foreach (Vector3Int nOffset in new Vector3Int[]
+						         {
+							         new(1, 0, 0), new(-1, 0, 0),
+							         new(0, 1, 0), new(0, -1, 0),
+							         new(0, 0, 1), new(0, 0, -1)
+						         })
+						{
+							Vector3Int neighbour = current + nOffset;
+							if (_BranchVoxels.Contains(neighbour) &&
+							    !usedBranchVoxels.Contains(neighbour))
+							{
+								queue.Enqueue(neighbour);
+								usedBranchVoxels.Add(neighbour);
+							}
+						}
+					}
+
+					branches.Add(fullBranch);
+				}
+			}
+
+			// Group branches into clusters based on LeafDensity
+			var b = 0;
+			while (b < branches.Count)
+			{
+				int count = Math.Min(LeafDensity, branches.Count - b);
+				List<List<Vector3Int>> clusterBranches =
+					branches.GetRange(b, count);
+
+				List<Vector3Int> clusterVoxels =
+					clusterBranches.SelectMany(x => x).ToList();
+
+				// Compute exact bounds
+				float minX = clusterVoxels.Min(v => v.x);
+				float maxX = clusterVoxels.Max(v => v.x);
+				float minY = clusterVoxels.Min(v => v.y);
+				float maxYCluster = clusterVoxels.Max(v => v.y);
+				float minZ = clusterVoxels.Min(v => v.z);
+				float maxZ = clusterVoxels.Max(v => v.z);
+
+				Vector3 clusterPos = new(
+					(minX + maxX) / 2f,
+					(minY + maxYCluster) / 2f,
+					(minZ + maxZ) / 2f
+				);
+
+				float scaleX = Mathf.Max(1f, maxX - minX + 1);
+				float scaleZ = Mathf.Max(1f, maxZ - minZ + 1);
+				float scaleY = Mathf.Max(1f, maxYCluster - minY + 1) +
+				               LeafThickness;
+
+				GameObject leaf = Instantiate(_VoxelPrefab, clusterPos,
+					Quaternion.identity, transform);
+				leaf.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
+
+				b += count;
+			}
+
+			i++;
+		}
+	}
+
+	private string GenerateLSystem()
+	{
+		string result = Axiom;
+
+		for (var i = 0; i < Iterations; i++)
+		{
+			string newString = result.Aggregate(string.Empty, (current, c) =>
+				current + (_Rules.ContainsKey(c.ToString())
+					? _Rules[c.ToString()]
+					: c.ToString()));
+
+			result = newString;
+		}
+
+		return result;
 	}
 
 	private void GenerateVoxelsFromString()
@@ -216,35 +362,6 @@ public class LSystemGenerator : MonoBehaviour
 		}
 	}
 
-	private struct TurtleState
-	{
-		public TurtleState(Vector3 pos, Vector3 dir)
-		{
-			Position = pos;
-			Direction = dir;
-		}
-
-		public Vector3 Position;
-		public Vector3 Direction;
-	}
-
-	private string GenerateLSystem()
-	{
-		string result = Axiom;
-
-		for (var i = 0; i < Iterations; i++)
-		{
-			string newString = result.Aggregate(string.Empty, (current, c) =>
-				current + (_Rules.ContainsKey(c.ToString())
-					? _Rules[c.ToString()]
-					: c.ToString()));
-
-			result = newString;
-		}
-
-		return result;
-	}
-
 	private void SpawnVoxels()
 	{
 		if (_VoxelPrefab == null)
@@ -265,51 +382,16 @@ public class LSystemGenerator : MonoBehaviour
 			Instantiate(_VoxelPrefab, voxelPos, Quaternion.identity, transform);
 	}
 
-	[Button("Spawn Leaves")]
-	private void GenerateLeaves()
+	private struct TurtleState
 	{
-		if (_VoxelPrefab == null || _BranchVoxels.Count == 0)
+		public TurtleState(Vector3 pos, Vector3 dir)
 		{
-			Debug.LogWarning("No leaf prefab or no branch voxels.");
-			return;
+			Position = pos;
+			Direction = dir;
 		}
 
-		List<int> branchHeights = _BranchVoxels.Select(v => v.y).Distinct()
-			.OrderBy(y => y).ToList();
-		if (branchHeights.Count < 2) return;
-
-		float currentLayerScale = LeafThickness;
-		var branchesInLayer = 0;
-
-		foreach (int height in branchHeights)
-		{
-			List<Vector3Int> layerVoxels =
-				_BranchVoxels.Where(v => v.y == height).ToList();
-			branchesInLayer += layerVoxels.Count;
-
-			if (branchesInLayer > LeafDensity)
-			{
-				currentLayerScale *= 0.8f; // taper
-				branchesInLayer = layerVoxels.Count;
-			}
-
-			// Compute bounds of the layer
-			float minX = layerVoxels.Min(v => v.x);
-			float maxX = layerVoxels.Max(v => v.x);
-			float minZ = layerVoxels.Min(v => v.z);
-			float maxZ = layerVoxels.Max(v => v.z);
-
-			var layerPos = new Vector3((minX + maxX) / 2f, height,
-				(minZ + maxZ) / 2f);
-
-			float scaleX = (maxX - minX + 1) * currentLayerScale;
-			float scaleZ = (maxZ - minZ + 1) * currentLayerScale;
-			float scaleY = currentLayerScale;
-
-			GameObject leaf = Instantiate(_VoxelPrefab, layerPos,
-				Quaternion.identity, transform);
-			leaf.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
-		}
+		public readonly Vector3 Position;
+		public readonly Vector3 Direction;
 	}
 }
 }

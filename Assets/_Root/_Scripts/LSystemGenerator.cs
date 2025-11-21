@@ -129,6 +129,22 @@ public class LSystemGenerator : MonoBehaviour
 		//GenerateLeaves();
 	}
 
+	public void GenerateVoxelSphere(Vector3 centre, int radius = 3)
+	{
+		int r2 = radius * radius;
+
+		// Loop through a cubic volume and keep only points inside the sphere.
+		for (int x = -radius; x <= radius; x++)
+		for (int y = -radius; y <= radius; y++)
+		for (int z = -radius; z <= radius; z++)
+		{
+			// Check if the voxel lies within the spherical radius.
+			if (x * x + y * y + z * z > r2) continue;
+			Vector3 pos = centre + new Vector3(x, y, z);
+			Instantiate(_VoxelPrefab, pos, Quaternion.identity, transform);
+		}
+	}
+
 	[Button]
 	private void Clear()
 	{
@@ -143,8 +159,7 @@ public class LSystemGenerator : MonoBehaviour
 	[Button("Spawn Leaves")]
 	private void GenerateLeaves()
 	{
-		if (_VoxelPrefab == null || _Voxels.Count == 0 ||
-		    _BranchVoxels.Count == 0)
+		if (!_VoxelPrefab || _Voxels.Count == 0 || _BranchVoxels.Count == 0)
 		{
 			Debug.LogWarning(
 				"No prefab, no trunk voxels, or no branch voxels.");
@@ -155,8 +170,7 @@ public class LSystemGenerator : MonoBehaviour
 			.OrderBy(y => y).ToList();
 		int maxY = trunkHeights.Max();
 
-		HashSet<Vector3Int>
-			usedBranchVoxels = new(); // to avoid double-counting
+		HashSet<Vector3Int> usedBranchVoxels = new();
 
 		var i = 0;
 		while (i < trunkHeights.Count)
@@ -172,7 +186,7 @@ public class LSystemGenerator : MonoBehaviour
 
 			List<List<Vector3Int>> branches = new();
 
-			// Find branch starting nodes around trunk
+			// Find the branch starting nodes around the trunk.
 			foreach (Vector3Int offset in new Vector3Int[]
 			         {
 				         new(-1, 0, 0),
@@ -182,43 +196,41 @@ public class LSystemGenerator : MonoBehaviour
 			         })
 			{
 				Vector3Int start = trunkVoxel + offset;
-				if (_BranchVoxels.Contains(start) &&
-				    !usedBranchVoxels.Contains(start))
+				if (!_BranchVoxels.Contains(start) ||
+				    usedBranchVoxels.Contains(start)) continue;
+
+				// Flood-fill to get full branch.
+				List<Vector3Int> fullBranch = new();
+				Queue<Vector3Int> queue = new();
+				queue.Enqueue(start);
+				usedBranchVoxels.Add(start);
+
+				while (queue.Count > 0)
 				{
-					// BFS/flood-fill to get full branch
-					List<Vector3Int> fullBranch = new();
-					Queue<Vector3Int> queue = new();
-					queue.Enqueue(start);
-					usedBranchVoxels.Add(start);
+					Vector3Int current = queue.Dequeue();
+					fullBranch.Add(current);
 
-					while (queue.Count > 0)
+					// Check all 6 neighbours.
+					foreach (Vector3Int nOffset in new Vector3Int[]
+					         {
+						         new(1, 0, 0), new(-1, 0, 0),
+						         new(0, 1, 0), new(0, -1, 0),
+						         new(0, 0, 1), new(0, 0, -1)
+					         })
 					{
-						Vector3Int current = queue.Dequeue();
-						fullBranch.Add(current);
+						Vector3Int neighbour = current + nOffset;
+						if (!_BranchVoxels.Contains(neighbour) ||
+						    usedBranchVoxels.Contains(neighbour)) continue;
 
-						// Check all 6 neighbours
-						foreach (Vector3Int nOffset in new Vector3Int[]
-						         {
-							         new(1, 0, 0), new(-1, 0, 0),
-							         new(0, 1, 0), new(0, -1, 0),
-							         new(0, 0, 1), new(0, 0, -1)
-						         })
-						{
-							Vector3Int neighbour = current + nOffset;
-							if (_BranchVoxels.Contains(neighbour) &&
-							    !usedBranchVoxels.Contains(neighbour))
-							{
-								queue.Enqueue(neighbour);
-								usedBranchVoxels.Add(neighbour);
-							}
-						}
+						queue.Enqueue(neighbour);
+						usedBranchVoxels.Add(neighbour);
 					}
-
-					branches.Add(fullBranch);
 				}
+
+				branches.Add(fullBranch);
 			}
 
-			// Group branches into clusters based on LeafDensity
+			// Group branches into clusters based on "LeafDensity" variable.
 			var b = 0;
 			while (b < branches.Count)
 			{
@@ -229,7 +241,7 @@ public class LSystemGenerator : MonoBehaviour
 				List<Vector3Int> clusterVoxels =
 					clusterBranches.SelectMany(x => x).ToList();
 
-				// Compute exact bounds
+				// Calculate Bounds.
 				float minX = clusterVoxels.Min(v => v.x);
 				float maxX = clusterVoxels.Max(v => v.x);
 				float minY = clusterVoxels.Min(v => v.y);
@@ -289,7 +301,7 @@ public class LSystemGenerator : MonoBehaviour
 		Vector3 direction = Vector3.up;
 		const float LENGTH = 1f;
 
-		var insideBranch = false; // track when we are branching
+		var insideBranch = false;
 
 		foreach (char c in _CurrentString)
 		{
@@ -352,7 +364,7 @@ public class LSystemGenerator : MonoBehaviour
 					position = state.Position;
 					direction = state.Direction;
 
-					// leaving branch
+					// Leave branch.
 					insideBranch = stack.Count > 0;
 				}
 
@@ -362,25 +374,73 @@ public class LSystemGenerator : MonoBehaviour
 		}
 	}
 
+	[Button("Spawn Leaves V2")]
+	private void GenLeavesV2()
+	{
+		List<Vector3Int> endPoints = GetBranchEndPositions();
+
+		// Generate a sphere of leaves at for each branch end point.
+		foreach (Vector3Int EndPoint in endPoints)
+			GenerateVoxelSphere(EndPoint, (int)LeafThickness);
+	}
+
+	private List<Vector3Int> GetBranchEndPositions()
+	{
+		var branchEnds = new List<Vector3Int>();
+		var stack = new Stack<TurtleState>();
+
+		Vector3 pos = Vector3.zero;
+		Vector3 dir = Vector3.up;
+
+		foreach (char c in _CurrentString)
+			switch (c)
+			{
+			case 'F':
+				pos += dir;
+			break;
+
+			case '+':
+				dir = Quaternion.Euler(0f, 0f, Angle) * dir;
+			break;
+
+			case '-':
+				dir = Quaternion.Euler(0f, 0f, -Angle) * dir;
+			break;
+
+			case '[':
+				stack.Push(new TurtleState(pos, dir));
+			break;
+
+			case ']':
+				branchEnds.Add(Vector3Int.RoundToInt(pos));
+
+				TurtleState restore = stack.Pop();
+				pos = restore.Position;
+				dir = restore.Direction;
+			break;
+			}
+
+		return branchEnds;
+	}
+
+
 	private void SpawnVoxels()
 	{
-		if (_VoxelPrefab == null)
+		if (!_VoxelPrefab)
 		{
 			Debug.LogWarning("No voxel prefab assigned!");
 			return;
 		}
 
-		foreach (Transform child in transform)
-			DestroyImmediate(child.gameObject);
-
-		// Spawn trunk voxels
+		// Spawn trunk voxels.
 		foreach (Vector3Int voxelPos in _Voxels)
 			Instantiate(_VoxelPrefab, voxelPos, Quaternion.identity, transform);
 
-		// Spawn branch voxels
+		// Spawn branch voxels.
 		foreach (Vector3Int voxelPos in _BranchVoxels)
 			Instantiate(_VoxelPrefab, voxelPos, Quaternion.identity, transform);
 	}
+
 
 	private struct TurtleState
 	{

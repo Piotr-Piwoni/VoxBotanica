@@ -153,7 +153,7 @@ MonoBehaviour:
   Angle: 32.6
   TrunkHeight: 3
   MaxHeight: 20
-  LeafThickness: 30
+  LeafThickness: 2
   LeafDensity: 3
   _Rules:
     _serializedList:

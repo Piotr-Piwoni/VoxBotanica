@@ -20,7 +20,7 @@ public class LSystemGenerator : MonoBehaviour
 	[MinValue(1f)]
 	public float MaxHeight = 20f;
 
-	[Title("Leaf Settings"), MinValue(0.1f)]
+	[Title("Leaf Settings"), MinValue(0.1f),]
 	public float LeafThickness = 2f;
 	[MinValue(1)]
 	public int LeafDensity = 3;
@@ -28,10 +28,10 @@ public class LSystemGenerator : MonoBehaviour
 	[SerializeField]
 	private SerializedDictionary<string, string> _Rules = new()
 	{
-		{ "F", "F[+F]F[-F]F" }
+			{ "F", "F[+F]F[-F]F" },
 	};
 
-	[Title("Visual Settings"), SerializeField]
+	[Title("Visual Settings"), SerializeField,]
 	private GameObject _VoxelPrefab;
 	[SerializeField]
 	private Color _BarkColour = new(0.451f, 0.325f, 0.165f); //< Brown.
@@ -131,7 +131,6 @@ public class LSystemGenerator : MonoBehaviour
 
 		GenerateVoxelsFromString();
 		SpawnVoxels();
-		//GenerateLeaves();
 	}
 
 	[Button]
@@ -150,13 +149,12 @@ public class LSystemGenerator : MonoBehaviour
 	{
 		if (!_VoxelPrefab || _Voxels.Count == 0 || _BranchVoxels.Count == 0)
 		{
-			Debug.LogWarning(
-				"No prefab, no trunk voxels, or no branch voxels.");
+			Debug.LogWarning("No prefab, no trunk voxels, or no branch voxels.");
 			return;
 		}
 
 		List<int> trunkHeights = _Voxels.Select(v => v.y).Distinct()
-			.OrderBy(y => y).ToList();
+										.OrderBy(y => y).ToList();
 		int maxY = trunkHeights.Max();
 
 		HashSet<Vector3Int> usedBranchVoxels = new();
@@ -177,16 +175,16 @@ public class LSystemGenerator : MonoBehaviour
 
 			// Find the branch starting nodes around the trunk.
 			foreach (Vector3Int offset in new Vector3Int[]
-			         {
-				         new(-1, 0, 0),
-				         new(1, 0, 0),
-				         new(0, 0, -1),
-				         new(0, 0, 1)
-			         })
+					 {
+							 new(-1, 0, 0),
+							 new(1, 0, 0),
+							 new(0, 0, -1),
+							 new(0, 0, 1),
+					 })
 			{
 				Vector3Int start = trunkVoxel + offset;
 				if (!_BranchVoxels.Contains(start) ||
-				    usedBranchVoxels.Contains(start)) continue;
+					usedBranchVoxels.Contains(start)) continue;
 
 				// Flood-fill to get full branch.
 				List<Vector3Int> fullBranch = new();
@@ -201,15 +199,15 @@ public class LSystemGenerator : MonoBehaviour
 
 					// Check all 6 neighbours.
 					foreach (Vector3Int nOffset in new Vector3Int[]
-					         {
-						         new(1, 0, 0), new(-1, 0, 0),
-						         new(0, 1, 0), new(0, -1, 0),
-						         new(0, 0, 1), new(0, 0, -1)
-					         })
+							 {
+									 new(1, 0, 0), new(-1, 0, 0),
+									 new(0, 1, 0), new(0, -1, 0),
+									 new(0, 0, 1), new(0, 0, -1),
+							 })
 					{
 						Vector3Int neighbour = current + nOffset;
 						if (!_BranchVoxels.Contains(neighbour) ||
-						    usedBranchVoxels.Contains(neighbour)) continue;
+							usedBranchVoxels.Contains(neighbour)) continue;
 
 						queue.Enqueue(neighbour);
 						usedBranchVoxels.Add(neighbour);
@@ -225,10 +223,10 @@ public class LSystemGenerator : MonoBehaviour
 			{
 				int count = Math.Min(LeafDensity, branches.Count - b);
 				List<List<Vector3Int>> clusterBranches =
-					branches.GetRange(b, count);
+						branches.GetRange(b, count);
 
 				List<Vector3Int> clusterVoxels =
-					clusterBranches.SelectMany(x => x).ToList();
+						clusterBranches.SelectMany(x => x).ToList();
 
 				// Calculate Bounds.
 				float minX = clusterVoxels.Min(v => v.x);
@@ -238,19 +236,17 @@ public class LSystemGenerator : MonoBehaviour
 				float minZ = clusterVoxels.Min(v => v.z);
 				float maxZ = clusterVoxels.Max(v => v.z);
 
-				Vector3 clusterPos = new(
-					(minX + maxX) / 2f,
-					(minY + maxYCluster) / 2f,
-					(minZ + maxZ) / 2f
-				);
+				Vector3 clusterPos = new((minX + maxX) / 2f,
+										 (minY + maxYCluster) / 2f,
+										 (minZ + maxZ) / 2f);
 
 				float scaleX = Mathf.Max(1f, maxX - minX + 1);
 				float scaleZ = Mathf.Max(1f, maxZ - minZ + 1);
 				float scaleY = Mathf.Max(1f, maxYCluster - minY + 1) +
-				               LeafThickness;
+							   LeafThickness;
 
 				GameObject leaf = Instantiate(_VoxelPrefab, clusterPos,
-					Quaternion.identity, transform);
+											  Quaternion.identity, transform);
 				leaf.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
 				leaf.GetComponent<MeshRenderer>().material.color = _LeafColour;
 
@@ -268,9 +264,11 @@ public class LSystemGenerator : MonoBehaviour
 		for (var i = 0; i < Iterations; i++)
 		{
 			string newString = result.Aggregate(string.Empty, (current, c) =>
-				current + (_Rules.ContainsKey(c.ToString())
-					? _Rules[c.ToString()]
-					: c.ToString()));
+														current +
+														(_Rules.ContainsKey(
+																 c.ToString()) ?
+																 _Rules[c.ToString()] :
+																 c.ToString()));
 
 			result = newString;
 		}
@@ -377,7 +375,7 @@ public class LSystemGenerator : MonoBehaviour
 			if (x * x + y * y + z * z > r2) continue;
 			Vector3 pos = centre + new Vector3(x, y, z);
 			GameObject obj = Instantiate(_VoxelPrefab, pos, Quaternion.identity,
-				transform);
+										 transform);
 			obj.GetComponent<MeshRenderer>().material.color = _LeafColour;
 		}
 	}
@@ -405,19 +403,19 @@ public class LSystemGenerator : MonoBehaviour
 			{
 			case 'F':
 				pos += dir;
-			break;
+				break;
 
 			case '+':
 				dir = Quaternion.Euler(0f, 0f, Angle) * dir;
-			break;
+				break;
 
 			case '-':
 				dir = Quaternion.Euler(0f, 0f, -Angle) * dir;
-			break;
+				break;
 
 			case '[':
 				stack.Push(new TurtleState(pos, dir));
-			break;
+				break;
 
 			case ']':
 				branchEnds.Add(Vector3Int.RoundToInt(pos));
@@ -425,7 +423,7 @@ public class LSystemGenerator : MonoBehaviour
 				TurtleState restore = stack.Pop();
 				pos = restore.Position;
 				dir = restore.Direction;
-			break;
+				break;
 			}
 
 		return branchEnds;
@@ -445,7 +443,7 @@ public class LSystemGenerator : MonoBehaviour
 		foreach (Vector3Int voxelPos in _Voxels)
 		{
 			obj = Instantiate(_VoxelPrefab, voxelPos, Quaternion.identity,
-				transform);
+							  transform);
 			obj.GetComponent<MeshRenderer>().material.color = _BarkColour;
 		}
 
@@ -453,11 +451,10 @@ public class LSystemGenerator : MonoBehaviour
 		foreach (Vector3Int voxelPos in _BranchVoxels)
 		{
 			obj = Instantiate(_VoxelPrefab, voxelPos, Quaternion.identity,
-				transform);
+							  transform);
 			obj.GetComponent<MeshRenderer>().material.color = _BarkColour;
 		}
 	}
-
 
 	private struct TurtleState
 	{

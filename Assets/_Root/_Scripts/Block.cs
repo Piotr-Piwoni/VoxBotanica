@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using VoxBotanica.Utilities;
@@ -7,6 +8,7 @@ using VoxBotanica.Utilities;
 
 namespace VoxBotanica
 {
+[Serializable]
 public class Block
 {
 	public Mesh Mesh { get; }

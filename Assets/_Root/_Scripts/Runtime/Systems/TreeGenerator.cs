@@ -21,18 +21,20 @@ public class TreeGenerator : SerializedMonoBehaviour
 	[MinValue(1)]
 	public int Iterations = 3;
 	[Range(5f, 90f)]
-	public float Angle = 25f;
+	public float AngleXY = 25f;
 	[MinValue(0.1f)]
 	public float TrunkHeight = 3f;
 	[MinValue(1f)]
 	public float MaxHeight = 20f;
+	[SerializeField, Range(0f, 360f),]
+	private float AngleXZ = 25f;
 
 	[SerializeField]
 	private Dictionary<string, string> _Rules = new() { { "F", "F[+F]F[-F]F" }, };
 	[SerializeField, DisplayAsString,]
 	private string _CurrentString;
 	[SerializeField, ReadOnly,]
-	private BlockData _Data = new();
+	private BlockData _BodyData = new();
 	[SerializeField]
 	private MeshFilter _MeshFilter;
 
@@ -51,7 +53,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 	public void Clear()
 	{
 		_CurrentString = string.Empty;
-		_Data.Clear();
+		_BodyData.Clear();
 		if (_MeshFilter.sharedMesh)
 			_MeshFilter.sharedMesh.Clear();
 	}
@@ -67,12 +69,12 @@ public class TreeGenerator : SerializedMonoBehaviour
 		GenerateVoxelsFromString();
 
 		// Create visuals.
-		_Data.ClearBlocks(); //< Update visuals.
-		foreach (Vector3 pos in _Data.Positions)
-			_Data.Add(new Block(pos, _Data.Positions, BlockType.Dirt));
+		_BodyData.ClearBlocks(); //< Update visuals.
+		foreach (Vector3 pos in _BodyData.Positions)
+			_BodyData.Add(new Block(pos, _BodyData.Positions, BlockType.Dirt));
 
 		// Combine all cube meshes.
-		Mesh finalMesh = MeshUtils.MergeMeshes(_Data.GetMeshes());
+		Mesh finalMesh = MeshUtils.MergeMeshes(_BodyData.GetMeshes());
 		_MeshFilter.sharedMesh = finalMesh;
 	}
 
@@ -98,12 +100,12 @@ public class TreeGenerator : SerializedMonoBehaviour
 		if (string.IsNullOrEmpty(_CurrentString))
 			return;
 
-		_Data.Clear();
+		_BodyData.Clear();
 
 		Vector3 position = Vector3.zero;
 		Vector3 direction = Vector3.up.normalized;
 
-		_Data.Add(Vector3Int.RoundToInt(position));
+		_BodyData.Add(Vector3Int.RoundToInt(position));
 
 		// Stack to save branch states.
 		Stack<TurtleState> stack = new();
@@ -126,34 +128,40 @@ public class TreeGenerator : SerializedMonoBehaviour
 				for (var i = 1; i <= steps; i++)
 				{
 					Vector3 p = Vector3.Lerp(position, next, i / (float)steps);
-					_Data.Add(Vector3Int.RoundToInt(p));
+					_BodyData.Add(Vector3Int.RoundToInt(p));
 				}
 
 				position = next;
 				break;
 			}
-
 			case '+':
 			{
 				if (height >= TrunkHeight)
-					direction = Quaternion.Euler(0f, 0f, Angle) * direction;
+				{
+					Quaternion rotZ = Quaternion.Euler(0f, 0f, AngleXY);
+					Quaternion rotX = Quaternion.Euler(AngleXZ, 0f, 0f);
+					direction = rotZ * rotX * direction;
+				}
+
 				break;
 			}
-
 			case '-':
 			{
 				if (height >= TrunkHeight)
-					direction = Quaternion.Euler(0f, 0f, -Angle) * direction;
+				{
+					Quaternion rotZ = Quaternion.Euler(0f, 0f, -AngleXY);
+					Quaternion rotX = Quaternion.Euler(-AngleXZ, 0f, 0f);
+					direction = rotZ * rotX * direction;
+				}
+
 				break;
 			}
-
 			case '[':
 			{
 				if (height >= TrunkHeight)
 					stack.Push(new TurtleState(position, direction));
 				break;
 			}
-
 			case ']':
 			{
 				if (stack.Count > 0)
@@ -167,17 +175,6 @@ public class TreeGenerator : SerializedMonoBehaviour
 			}
 			}
 		}
-	}
-
-
-	private static Vector3Int RotateCcw(Vector3Int dir)
-	{
-		return new Vector3Int(-dir.y, dir.x, dir.z);
-	}
-
-	private static Vector3Int RotateCw(Vector3Int dir)
-	{
-		return new Vector3Int(dir.y, -dir.x, dir.z);
 	}
 
 
@@ -213,27 +210,34 @@ public class TreeGenerator : SerializedMonoBehaviour
 				Vector3 newPos = position + direction * _LENGTH;
 
 				if (newPos.y <= MaxHeight)
-					Handles.DrawAAPolyLine(_GizmosLineWidth, position, newPos);
+					Handles.DrawAAPolyLine(_GizmosLineWidth, position,
+										   position + direction * _LENGTH);
 
 				position = newPos;
 				break;
 			}
-
 			case '+':
 				if (height >= TrunkHeight)
-					direction = Quaternion.Euler(0f, 0f, Angle) * direction;
-				break;
+				{
+					Quaternion rotZ = Quaternion.Euler(0f, 0f, AngleXY);
+					Quaternion rotX = Quaternion.Euler(AngleXZ, 0f, 0f);
+					direction = rotZ * rotX * direction;
+				}
 
+				break;
 			case '-':
 				if (height >= TrunkHeight)
-					direction = Quaternion.Euler(0f, 0f, -Angle) * direction;
-				break;
+				{
+					Quaternion rotZ = Quaternion.Euler(0f, 0f, -AngleXY);
+					Quaternion rotX = Quaternion.Euler(-AngleXZ, 0f, 0f);
+					direction = rotZ * rotX * direction;
+				}
 
+				break;
 			case '[':
 				if (height >= TrunkHeight)
 					stack.Push(new TurtleState(position, direction));
 				break;
-
 			case ']':
 				if (height >= TrunkHeight && stack.Count > 0)
 				{
@@ -245,6 +249,13 @@ public class TreeGenerator : SerializedMonoBehaviour
 				break;
 			}
 		}
+	}
+
+	private void OnValidate()
+	{
+		if (!_MeshFilter || _CurrentString == string.Empty) return;
+
+		Generate();
 	}
 	#endif
 }

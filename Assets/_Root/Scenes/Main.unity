@@ -150,7 +150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Axiom: F
   Iterations: 4
-  Angle: 32.6
+  Angle: 25
   TrunkHeight: 3
   MaxHeight: 20
   LeafThickness: 2
@@ -160,6 +160,8 @@ MonoBehaviour:
     - Key: F
       Value: F[+F]F[-F]F
   _VoxelPrefab: {fileID: 4287990560629461318, guid: 8f9a1b73ef44bb147b515666a8409c99, type: 3}
+  _BarkColour: {r: 0.451, g: 0.325, b: 0.165, a: 1}
+  _LeafColour: {r: 0, g: 1, b: 0, a: 1}
 --- !u!4 &82610245
 Transform:
   m_ObjectHideFlags: 0

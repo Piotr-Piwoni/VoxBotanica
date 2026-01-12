@@ -30,8 +30,13 @@ public class LSystemGenerator : MonoBehaviour
 	{
 		{ "F", "F[+F]F[-F]F" }
 	};
-	[SerializeField]
+
+	[Title("Visual Settings"), SerializeField]
 	private GameObject _VoxelPrefab;
+	[SerializeField]
+	private Color _BarkColour = new(0.451f, 0.325f, 0.165f); //< Brown.
+	[SerializeField]
+	private Color _LeafColour = Color.green;
 
 	private readonly HashSet<Vector3Int> _BranchVoxels = new();
 	private readonly HashSet<Vector3Int> _Voxels = new();
@@ -127,22 +132,6 @@ public class LSystemGenerator : MonoBehaviour
 		GenerateVoxelsFromString();
 		SpawnVoxels();
 		//GenerateLeaves();
-	}
-
-	public void GenerateVoxelSphere(Vector3 centre, int radius = 3)
-	{
-		int r2 = radius * radius;
-
-		// Loop through a cubic volume and keep only points inside the sphere.
-		for (int x = -radius; x <= radius; x++)
-		for (int y = -radius; y <= radius; y++)
-		for (int z = -radius; z <= radius; z++)
-		{
-			// Check if the voxel lies within the spherical radius.
-			if (x * x + y * y + z * z > r2) continue;
-			Vector3 pos = centre + new Vector3(x, y, z);
-			Instantiate(_VoxelPrefab, pos, Quaternion.identity, transform);
-		}
 	}
 
 	[Button]
@@ -263,6 +252,7 @@ public class LSystemGenerator : MonoBehaviour
 				GameObject leaf = Instantiate(_VoxelPrefab, clusterPos,
 					Quaternion.identity, transform);
 				leaf.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
+				leaf.GetComponent<MeshRenderer>().material.color = _LeafColour;
 
 				b += count;
 			}
@@ -374,6 +364,24 @@ public class LSystemGenerator : MonoBehaviour
 		}
 	}
 
+	private void GenerateVoxelSphere(Vector3 centre, int radius = 3)
+	{
+		int r2 = radius * radius;
+
+		// Loop through a cubic volume and keep only points inside the sphere.
+		for (int x = -radius; x <= radius; x++)
+		for (int y = -radius; y <= radius; y++)
+		for (int z = -radius; z <= radius; z++)
+		{
+			// Check if the voxel lies within the spherical radius.
+			if (x * x + y * y + z * z > r2) continue;
+			Vector3 pos = centre + new Vector3(x, y, z);
+			GameObject obj = Instantiate(_VoxelPrefab, pos, Quaternion.identity,
+				transform);
+			obj.GetComponent<MeshRenderer>().material.color = _LeafColour;
+		}
+	}
+
 	[Button("Spawn Leaves V2")]
 	private void GenLeavesV2()
 	{
@@ -433,12 +441,21 @@ public class LSystemGenerator : MonoBehaviour
 		}
 
 		// Spawn trunk voxels.
+		GameObject obj;
 		foreach (Vector3Int voxelPos in _Voxels)
-			Instantiate(_VoxelPrefab, voxelPos, Quaternion.identity, transform);
+		{
+			obj = Instantiate(_VoxelPrefab, voxelPos, Quaternion.identity,
+				transform);
+			obj.GetComponent<MeshRenderer>().material.color = _BarkColour;
+		}
 
 		// Spawn branch voxels.
 		foreach (Vector3Int voxelPos in _BranchVoxels)
-			Instantiate(_VoxelPrefab, voxelPos, Quaternion.identity, transform);
+		{
+			obj = Instantiate(_VoxelPrefab, voxelPos, Quaternion.identity,
+				transform);
+			obj.GetComponent<MeshRenderer>().material.color = _BarkColour;
+		}
 	}
 
 

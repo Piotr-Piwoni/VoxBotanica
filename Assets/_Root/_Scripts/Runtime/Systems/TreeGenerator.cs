@@ -5,10 +5,12 @@ using UnityEngine;
 using VoxBotanica.Components;
 using VoxBotanica.Types;
 using VoxBotanica.Utilities;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace VoxBotanica.Systems
 {
-using TurtleStateInt = TurtleState<Vector3Int>;
 using TurtleState = TurtleState<Vector3>;
 
 [HideMonoScript, RequireComponent(typeof(MeshFilter), typeof(MeshRenderer)),]
@@ -98,13 +100,13 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 		_Data.Clear();
 
-		Vector3Int position = Vector3Int.zero;
-		Vector3Int direction = Vector3Int.up;
+		Vector3 position = Vector3.zero;
+		Vector3 direction = Vector3.up.normalized;
 
-		_Data.Add(position);
+		_Data.Add(Vector3Int.RoundToInt(position));
 
-		Stack<TurtleStateInt> stack = new();
-
+		// Stack to save branch states.
+		Stack<TurtleState> stack = new();
 		foreach (char c in _CurrentString)
 		{
 			float height = position.y;
@@ -116,43 +118,47 @@ public class TreeGenerator : SerializedMonoBehaviour
 			{
 			case 'F':
 			{
-				Vector3Int next = position + direction * _LENGTH;
+				// Compute next position along the current direction.
+				Vector3 next = position + direction * _LENGTH;
 
-				if (next.y <= MaxHeight)
+				// Interpolate between position and next to place voxels on grid.
+				int steps = Mathf.CeilToInt(_LENGTH);
+				for (var i = 1; i <= steps; i++)
 				{
-					position = next;
-					_Data.Add(position);
+					Vector3 p = Vector3.Lerp(position, next, i / (float)steps);
+					_Data.Add(Vector3Int.RoundToInt(p));
 				}
 
+				position = next;
 				break;
 			}
 
 			case '+':
 			{
 				if (height >= TrunkHeight)
-					direction = RotateCw(direction);
+					direction = Quaternion.Euler(0f, 0f, Angle) * direction;
 				break;
 			}
 
 			case '-':
 			{
 				if (height >= TrunkHeight)
-					direction = RotateCcw(direction);
+					direction = Quaternion.Euler(0f, 0f, -Angle) * direction;
 				break;
 			}
 
 			case '[':
 			{
 				if (height >= TrunkHeight)
-					stack.Push(new TurtleStateInt(position, direction));
+					stack.Push(new TurtleState(position, direction));
 				break;
 			}
 
 			case ']':
 			{
-				if (height >= TrunkHeight && stack.Count > 0)
+				if (stack.Count > 0)
 				{
-					TurtleStateInt state = stack.Pop();
+					TurtleState state = stack.Pop();
 					position = state.Position;
 					direction = state.Direction;
 				}
@@ -162,6 +168,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 			}
 		}
 	}
+
 
 	private static Vector3Int RotateCcw(Vector3Int dir)
 	{
@@ -177,6 +184,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 	#if UNITY_EDITOR
 	[SerializeField]
 	private Color _GizmosColour = Color.magenta;
+	[SerializeField, Range(1f, 5f),]
+	private float _GizmosLineWidth = 4f;
 
 	private void OnDrawGizmos()
 	{
@@ -184,15 +193,16 @@ public class TreeGenerator : SerializedMonoBehaviour
 			return;
 
 		var stack = new Stack<TurtleState>();
-		Vector3 position = Vector3.zero;
+		Vector3 renderOffset = Vector3.back;
+		Vector3 position = Vector3.zero + renderOffset;
 		Vector3 direction = Vector3.up;
 
-		Gizmos.color = _GizmosColour;
+		Handles.color = _GizmosColour;
+
 		foreach (char c in _CurrentString)
 		{
 			float height = position.y;
 
-			// Avoid growth beyond maximum height.
 			if (height >= MaxHeight)
 				break;
 
@@ -202,44 +212,37 @@ public class TreeGenerator : SerializedMonoBehaviour
 			{
 				Vector3 newPos = position + direction * _LENGTH;
 
-				// Only draw if under allowed max height.
 				if (newPos.y <= MaxHeight)
-					Gizmos.DrawLine(position, newPos);
+					Handles.DrawAAPolyLine(_GizmosLineWidth, position, newPos);
 
 				position = newPos;
 				break;
 			}
+
 			case '+':
-			{
-				// No rotation until trunk height reached.
 				if (height >= TrunkHeight)
 					direction = Quaternion.Euler(0f, 0f, Angle) * direction;
 				break;
-			}
+
 			case '-':
-			{
-				// No rotation until trunk height reached.
 				if (height >= TrunkHeight)
 					direction = Quaternion.Euler(0f, 0f, -Angle) * direction;
 				break;
-			}
+
 			case '[':
-			{
-				// Don’t store branches before trunk height.
 				if (height >= TrunkHeight)
 					stack.Push(new TurtleState(position, direction));
 				break;
-			}
-			case ']':
-			{
-				if (!(height >= TrunkHeight) || stack.Count <= 0)
-					break;
 
-				TurtleState state = stack.Pop();
-				position = state.Position;
-				direction = state.Direction;
+			case ']':
+				if (height >= TrunkHeight && stack.Count > 0)
+				{
+					TurtleState state = stack.Pop();
+					position = state.Position;
+					direction = state.Direction;
+				}
+
 				break;
-			}
 			}
 		}
 	}

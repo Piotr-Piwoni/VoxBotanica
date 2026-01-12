@@ -26,6 +26,11 @@ Position: $7ngxqJn9Qej2roRBoZMs1T:1
 	Icon = BugFill
 	TextColor = "red"
 
+# $XSCmJ5WuQF7o7fdePSV95a
+Position: $QgrfVrbTpLPrWS66EkXoUg:0
++ [Sirenix.OdinInspector.FoldoutGroupAttribute]
+	GroupName = "Gizmos Settings"
+
 # _Rules
 Position: $exczd5YHGxXEJuokRQLr5:2
 
@@ -47,15 +52,18 @@ Position: $exczd5YHGxXEJuokRQLr5:4
 Position: $exczd5YHGxXEJuokRQLr5:5
 
 # _CurrentString
-Position: $QgrfVrbTpLPrWS66EkXoUg:0
+Position: $QgrfVrbTpLPrWS66EkXoUg:1
 * [Sirenix.OdinInspector.DisplayAsStringAttribute]
 	EnableRichText = True
 
 # _GizmosColour
-Position: $QgrfVrbTpLPrWS66EkXoUg:1
+Position: $XSCmJ5WuQF7o7fdePSV95a:0
 
 # _Data
 Position: $QgrfVrbTpLPrWS66EkXoUg:2
 
 # _MeshFilter
 Position: $YZzNTS8D8Ft4L8kQM7KTW:0
+
+# _GizmosLineWidth
+Position: $XSCmJ5WuQF7o7fdePSV95a:1

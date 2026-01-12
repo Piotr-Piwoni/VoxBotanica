@@ -57,22 +57,7 @@ public class Block
 
 	public bool HasSolidNeighbour(Vector3Int position)
 	{
-		/*// Check if on the edge of a chunk.
-		if (position.x < 0 || position.x >= Chunk.Size.x ||
-			position.y < 0 || position.y >= Chunk.Size.y ||
-			position.z < 0 || position.z >= Chunk.Size.z)
-			return false;
-
-		// Check if it's next to a transparent block.
-		if (Chunk.ChunkData[position.x + Chunk.Size.x *
-							(position.y + Chunk.Size.z * position.z)] == BlockType.Air ||
-			Chunk.ChunkData[position.x + Chunk.Size.x *
-							(position.y + Chunk.Size.z * position.z)] == BlockType.Water)
-			return false;
-
-
-		return true;*/
-		return false;
+		return CubeGen.BlockData.Contains(position);
 	}
 }
 }

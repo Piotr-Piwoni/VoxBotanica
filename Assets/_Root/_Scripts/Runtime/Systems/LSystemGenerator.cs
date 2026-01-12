@@ -5,7 +5,7 @@ using AYellowpaper.SerializedCollections;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace VoxBotanica
+namespace VoxBotanica.Systems
 {
 public class LSystemGenerator : MonoBehaviour
 {

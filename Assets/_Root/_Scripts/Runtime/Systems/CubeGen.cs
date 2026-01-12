@@ -1,8 +1,10 @@
 ﻿using Sirenix.OdinInspector;
 using UnityEngine;
+using VoxBotanica.Components;
+using VoxBotanica.Types;
 using VoxBotanica.Utilities;
 
-namespace VoxBotanica
+namespace VoxBotanica.Systems
 {
 public class CubeGen : SerializedMonoBehaviour
 {

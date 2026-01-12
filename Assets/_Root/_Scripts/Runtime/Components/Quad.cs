@@ -1,10 +1,11 @@
 using UnityEngine;
+using VoxBotanica.Types;
 using VoxBotanica.Utilities;
 
 // Copied from my other project VoxelWorld which was based off the web course
 // "Create Minecraft-Inspired Voxel Worlds - Unity 6 Compatible" By Penny de Byl.
 
-namespace VoxBotanica
+namespace VoxBotanica.Components
 {
 public class Quad
 {

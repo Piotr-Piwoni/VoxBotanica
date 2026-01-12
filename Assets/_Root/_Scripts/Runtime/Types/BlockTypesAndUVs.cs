@@ -3,7 +3,7 @@ using UnityEngine;
 // Copied from my other project VoxelWorld which was based off the web course
 // "Create Minecraft-Inspired Voxel Worlds - Unity 6 Compatible" By Penny de Byl.
 
-namespace VoxBotanica.Utilities
+namespace VoxBotanica.Types
 {
 // ──────────────────────────────────────────────────────────────
 // Block Types

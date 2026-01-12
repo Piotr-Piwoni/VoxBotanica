@@ -1,0 +1,61 @@
+OVDF v1.1
+VoxBotanica.Systems.TreeGenerator, Project
+MetaGuid:271c469217e84182aae1a5283cf6281a
+
+# $exczd5YHGxXEJuokRQLr5
+Position: $YZzNTS8D8Ft4L8kQM7KTW:1
++ [Sirenix.OdinInspector.TitleGroupAttribute]
+	GroupName = "L-System Settings"
+
+# $7ngxqJn9Qej2roRBoZMs1T
+Position: $root:2
++ [Sirenix.OdinInspector.TabGroupAttribute]
+	GroupName = ""
+
+# $YZzNTS8D8Ft4L8kQM7KTW
+Position: $7ngxqJn9Qej2roRBoZMs1T:0
++ [Sirenix.OdinInspector.TabGroupAttribute+TabSubGroupAttribute]
+	GroupName = "Settings"
+	Icon = GearFill
+	TextColor = "yellow"
+
+# $QgrfVrbTpLPrWS66EkXoUg
+Position: $7ngxqJn9Qej2roRBoZMs1T:1
++ [Sirenix.OdinInspector.TabGroupAttribute+TabSubGroupAttribute]
+	GroupName = "Debug"
+	Icon = BugFill
+	TextColor = "red"
+
+# _Rules
+Position: $exczd5YHGxXEJuokRQLr5:2
+
+# Axiom
+Position: $exczd5YHGxXEJuokRQLr5:0
+
+# Iterations
+Position: $exczd5YHGxXEJuokRQLr5:1
+
+# Angle
+Position: $exczd5YHGxXEJuokRQLr5:3
++ [UnityEngine.SpaceAttribute]
+	height = 13
+
+# TrunkHeight
+Position: $exczd5YHGxXEJuokRQLr5:4
+
+# MaxHeight
+Position: $exczd5YHGxXEJuokRQLr5:5
+
+# _CurrentString
+Position: $QgrfVrbTpLPrWS66EkXoUg:0
+* [Sirenix.OdinInspector.DisplayAsStringAttribute]
+	EnableRichText = True
+
+# _GizmosColour
+Position: $QgrfVrbTpLPrWS66EkXoUg:1
+
+# _Data
+Position: $QgrfVrbTpLPrWS66EkXoUg:2
+
+# _MeshFilter
+Position: $YZzNTS8D8Ft4L8kQM7KTW:0

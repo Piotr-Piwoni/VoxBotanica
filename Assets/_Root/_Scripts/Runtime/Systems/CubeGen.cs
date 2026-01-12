@@ -6,6 +6,7 @@ using VoxBotanica.Utilities;
 
 namespace VoxBotanica.Systems
 {
+[HideMonoScript]
 public class CubeGen : SerializedMonoBehaviour
 {
 	[ShowInInspector, ReadOnly,]
@@ -47,7 +48,7 @@ public class CubeGen : SerializedMonoBehaviour
 		// Create visuals.
 		BlockData.ClearBlocks(); //< Update visuals.
 		foreach (Vector3 pos in BlockData.Positions)
-			BlockData.Add(new Block(pos, BlockType.Dirt));
+			BlockData.Add(new Block(pos, BlockData.Positions, BlockType.Dirt));
 
 		// Combine all cube meshes.
 		Mesh finalMesh = MeshUtils.MergeMeshes(BlockData.GetMeshes());

@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
+using Sirenix.Utilities;
 using UnityEngine;
-using VoxBotanica.Systems;
 using VoxBotanica.Types;
 using VoxBotanica.Utilities;
 
@@ -16,28 +17,24 @@ public class Block
 	public Mesh Mesh { get; }
 
 
-	public Block(Vector3 offset, BlockType bType = 0)
+	public Block(Vector3 offset, [CanBeNull] List<Vector3Int> blocks, BlockType bType = 0)
 	{
-		Vector3 blockLocalPosition = offset;
-
 		if (bType == BlockType.Air) return;
 
 		// Create mesh.
 		List<Quad> quads = new();
-		Vector3Int intLocalPos = new((int)blockLocalPosition.x,
-									 (int)blockLocalPosition.y,
-									 (int)blockLocalPosition.z);
-		if (!HasSolidNeighbour(intLocalPos.x, intLocalPos.y, intLocalPos.z + 1))
+		Vector3Int intLocalPos = new((int)offset.x, (int)offset.y, (int)offset.z);
+		if (!HasSolidNeighbour(intLocalPos.x, intLocalPos.y, intLocalPos.z + 1, blocks))
 			quads.Add(new Quad(MeshUtils.BlockSide.Front, offset, bType));
-		if (!HasSolidNeighbour(intLocalPos.x, intLocalPos.y, intLocalPos.z - 1))
+		if (!HasSolidNeighbour(intLocalPos.x, intLocalPos.y, intLocalPos.z - 1, blocks))
 			quads.Add(new Quad(MeshUtils.BlockSide.Back, offset, bType));
-		if (!HasSolidNeighbour(intLocalPos.x - 1, intLocalPos.y, intLocalPos.z))
+		if (!HasSolidNeighbour(intLocalPos.x - 1, intLocalPos.y, intLocalPos.z, blocks))
 			quads.Add(new Quad(MeshUtils.BlockSide.Left, offset, bType));
-		if (!HasSolidNeighbour(intLocalPos.x + 1, intLocalPos.y, intLocalPos.z))
+		if (!HasSolidNeighbour(intLocalPos.x + 1, intLocalPos.y, intLocalPos.z, blocks))
 			quads.Add(new Quad(MeshUtils.BlockSide.Right, offset, bType));
-		if (!HasSolidNeighbour(intLocalPos.x, intLocalPos.y + 1, intLocalPos.z))
+		if (!HasSolidNeighbour(intLocalPos.x, intLocalPos.y + 1, intLocalPos.z, blocks))
 			quads.Add(new Quad(MeshUtils.BlockSide.Top, offset, bType));
-		if (!HasSolidNeighbour(intLocalPos.x, intLocalPos.y - 1, intLocalPos.z))
+		if (!HasSolidNeighbour(intLocalPos.x, intLocalPos.y - 1, intLocalPos.z, blocks))
 			quads.Add(new Quad(MeshUtils.BlockSide.Bottom, offset, bType));
 
 		if (quads.Count == 0) return;
@@ -52,14 +49,18 @@ public class Block
 	}
 
 
-	public bool HasSolidNeighbour(int x, int y, int z)
+	public bool HasSolidNeighbour(int x, int y, int z, List<Vector3Int> blocks)
 	{
-		return HasSolidNeighbour(new Vector3Int(x, y, z));
+		return HasSolidNeighbour(new Vector3Int(x, y, z), blocks);
 	}
 
-	public bool HasSolidNeighbour(Vector3Int position)
+	public bool HasSolidNeighbour(Vector3Int position, List<Vector3Int> blocks)
 	{
-		return CubeGen.BlockData.Contains(position);
+		if (!blocks.IsNullOrEmpty()) return blocks.Contains(position);
+
+		Debug.LogWarning($"No {nameof(List<Vector3Int>)} provided to the " +
+						 $"{nameof(HasSolidNeighbour)}() function!");
+		return false;
 	}
 }
 }

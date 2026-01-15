@@ -1,0 +1,9 @@
+OVDF v1.1
+VoxBotanica.Block, Assembly-CSharp
+
+# Mesh
+Visibility: Shown
++ [Sirenix.OdinInspector.ReadOnlyAttribute]
+
+# <Mesh>k__BackingField
+Visibility: Hidden

@@ -4,9 +4,13 @@ using System.Linq;
 using AYellowpaper.SerializedCollections;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using VoxBotanica.Types;
 
-namespace VoxBotanica
+namespace VoxBotanica.Systems
 {
+using TurtleState = TurtleState<Vector3>;
+
+[HideMonoScript]
 public class LSystemGenerator : MonoBehaviour
 {
 	[Title("L-System Settings")]
@@ -454,18 +458,6 @@ public class LSystemGenerator : MonoBehaviour
 							  transform);
 			obj.GetComponent<MeshRenderer>().material.color = _BarkColour;
 		}
-	}
-
-	private struct TurtleState
-	{
-		public TurtleState(Vector3 pos, Vector3 dir)
-		{
-			Position = pos;
-			Direction = dir;
-		}
-
-		public readonly Vector3 Position;
-		public readonly Vector3 Direction;
 	}
 }
 }

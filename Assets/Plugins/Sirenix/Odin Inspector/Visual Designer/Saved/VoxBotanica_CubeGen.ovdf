@@ -1,0 +1,27 @@
+OVDF v1.1
+VoxBotanica.CubeGen, Assembly-CSharp
+MetaGuid:b5ebd2f8932d4d47a7402e51f6ae0acf
+
+# $5Ko45n5y3gdgcXnmVN3weu
+Position: $root:3
++ [Sirenix.OdinInspector.FoldoutGroupAttribute]
+	GroupName = "References"
+
+# _ChunkSize
+Position: $root:5
+
+# _MeshFilter
+Position: $5Ko45n5y3gdgcXnmVN3weu:0
+
+# _Renderer
+Position: $5Ko45n5y3gdgcXnmVN3weu:1
+
+# _Position
+Position: $root:4
+
+# CreateCube(Vector3Int?)
+* [Sirenix.OdinInspector.ButtonAttribute]
+	Style = FoldoutButton
+
+# BlockPos
+Position: $root:20

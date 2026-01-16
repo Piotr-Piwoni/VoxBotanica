@@ -31,6 +31,11 @@ Position: $QgrfVrbTpLPrWS66EkXoUg:0
 + [Sirenix.OdinInspector.FoldoutGroupAttribute]
 	GroupName = "Gizmos Settings"
 
+# $EmHf6XtAqfknT6EF91btmr
+Position: $exczd5YHGxXEJuokRQLr5:7
++ [Sirenix.OdinInspector.TitleGroupAttribute]
+	GroupName = "Body Settings"
+
 # _Rules
 Position: $exczd5YHGxXEJuokRQLr5:2
 
@@ -70,10 +75,28 @@ Position: $YZzNTS8D8Ft4L8kQM7KTW:0
 Position: $XSCmJ5WuQF7o7fdePSV95a:1
 
 # _BodyData
-Position: $QgrfVrbTpLPrWS66EkXoUg:2
+Position: $QgrfVrbTpLPrWS66EkXoUg:4
 
 # AngleXY
 Position: $exczd5YHGxXEJuokRQLr5:3
 
 # AngleXZ
 Position: $exczd5YHGxXEJuokRQLr5:4
+
+# Generate()
+Position: $root:20
+
+# TrunkThickness
+Position: $EmHf6XtAqfknT6EF91btmr:0
+
+# TrunkShape
+Position: $EmHf6XtAqfknT6EF91btmr:1
++ [Sirenix.OdinInspector.EnumToggleButtonsAttribute]
+
+# _TrunkString
+Position: $QgrfVrbTpLPrWS66EkXoUg:2
+* [Sirenix.OdinInspector.DisplayAsStringAttribute]
+	Alignment = Left
+
+# _Branches
+Position: $QgrfVrbTpLPrWS66EkXoUg:3

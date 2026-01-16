@@ -26,21 +26,31 @@ public class TreeGenerator : SerializedMonoBehaviour
 	public float TrunkHeight = 3f;
 	[MinValue(1f)]
 	public float MaxHeight = 20f;
-	[SerializeField, Range(0f, 360f),]
-	private float AngleXZ = 25f;
+	[Range(0f, 360f),]
+	public float AngleXZ = 25f;
+	[MinValue(1)]
+	public int TrunkThickness = 2;
+	public TrunkThicknessShape TrunkShape = TrunkThicknessShape.Circular;
 
 	[SerializeField]
 	private Dictionary<string, string> _Rules = new() { { "F", "F[+F]F[-F]F" }, };
 	[SerializeField, DisplayAsString,]
-	private string _CurrentString;
+	private string _CurrentString = string.Empty;
 	[SerializeField, ReadOnly,]
 	private BlockData _BodyData = new();
 	[SerializeField]
 	private MeshFilter _MeshFilter;
+	[SerializeField, DisplayAsString,]
+	private string _TrunkString = string.Empty;
+	[SerializeField, ReadOnly,]
+	private List<string> _Branches = new();
+
 
 	private void Awake()
 	{
 		_MeshFilter = GetComponent<MeshFilter>();
+
+		_Branches.Capacity = 10;
 	}
 
 	private void Start()
@@ -53,6 +63,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 	public void Clear()
 	{
 		_CurrentString = string.Empty;
+		_TrunkString = string.Empty;
+		_Branches.Clear();
 		_BodyData.Clear();
 		if (_MeshFilter.sharedMesh)
 			_MeshFilter.sharedMesh.Clear();
@@ -63,9 +75,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 	{
 		Clear();
 
-		_CurrentString = GenerateLSystem();
-		Debug.Log($"Current String: <color=yellow>{_CurrentString}</color>");
-
+		GenerateLSystem();
+		ParseSystem();
 		GenerateVoxelsFromString();
 
 		// Create visuals.
@@ -78,7 +89,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 		_MeshFilter.sharedMesh = finalMesh;
 	}
 
-	private string GenerateLSystem()
+	private void GenerateLSystem()
 	{
 		string result = Axiom;
 
@@ -92,7 +103,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 			result = newString;
 		}
 
-		return result;
+		_CurrentString = result;
+		Debug.Log($"Current String: <color=yellow>{_CurrentString}</color>");
 	}
 
 	private void GenerateVoxelsFromString()
@@ -173,8 +185,63 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 				break;
 			}
+			default:
+				Debug.LogWarning($"Invalid symbol <color=yellow>{c}</color> " +
+								 "was trying to be parsed!");
+				break;
 			}
 		}
+	}
+
+	private void ParseSystem()
+	{
+		_TrunkString = string.Empty;
+		_Branches.Clear();
+
+		const char BRANCH_SYMBOL = 'B';
+		var depth = 0;
+		var currentBranch = string.Empty;
+
+		foreach (char c in _CurrentString)
+		{
+			switch (c)
+			{
+			case '[':
+			{
+				if (depth == 0)
+				{
+					_TrunkString += BRANCH_SYMBOL;
+					currentBranch = "[";
+				}
+				else
+					currentBranch += c;
+
+				depth++;
+				continue;
+			}
+			case ']':
+			{
+				depth--;
+				currentBranch += ']';
+
+				if (depth == 0)
+					_Branches.Add(currentBranch);
+
+				continue;
+			}
+			}
+
+			if (depth == 0)
+				_TrunkString += c;
+			else
+				currentBranch += c;
+		}
+	}
+
+	public enum TrunkThicknessShape
+	{
+		Circular,
+		Square,
 	}
 
 

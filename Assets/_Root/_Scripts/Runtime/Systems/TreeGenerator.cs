@@ -37,7 +37,9 @@ public class TreeGenerator : SerializedMonoBehaviour
 	[SerializeField, DisplayAsString,]
 	private string _CurrentString = string.Empty;
 	[SerializeField, ReadOnly,]
-	private BlockData _BodyData = new();
+	private BlockData _TrunkData = new();
+	[SerializeField, ReadOnly,]
+	private BlockData _BranchData = new();
 	[SerializeField]
 	private MeshFilter _MeshFilter;
 	[SerializeField, DisplayAsString,]
@@ -65,7 +67,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 		_CurrentString = string.Empty;
 		_TrunkString = string.Empty;
 		_Branches.Clear();
-		_BodyData.Clear();
+		_TrunkData.Clear();
 		if (_MeshFilter.sharedMesh)
 			_MeshFilter.sharedMesh.Clear();
 	}
@@ -80,12 +82,20 @@ public class TreeGenerator : SerializedMonoBehaviour
 		GenerateVoxelsFromString();
 
 		// Create visuals.
-		_BodyData.ClearBlocks(); //< Update visuals.
-		foreach (Vector3 pos in _BodyData.Positions)
-			_BodyData.Add(new Block(pos, _BodyData.Positions, BlockType.Dirt));
+		_TrunkData.ClearBlocks(); //< Update visuals.
+		foreach (Vector3 pos in _TrunkData.Positions)
+			_TrunkData.Add(new Block(pos, _TrunkData.Positions, BlockType.Dirt));
+
+		_BranchData.ClearBlocks(); //< Update visuals.
+		foreach (Vector3 pos in _BranchData.Positions)
+			_BranchData.Add(new Block(pos, _BranchData.Positions, BlockType.Dirt));
+
+		List<Mesh> meshes = new();
+		meshes.AddRange(_TrunkData.GetMeshes());
+		meshes.AddRange(_BranchData.GetMeshes());
 
 		// Combine all cube meshes.
-		Mesh finalMesh = MeshUtils.MergeMeshes(_BodyData.GetMeshes());
+		Mesh finalMesh = MeshUtils.MergeMeshes(meshes.ToArray());
 		_MeshFilter.sharedMesh = finalMesh;
 	}
 
@@ -106,30 +116,26 @@ public class TreeGenerator : SerializedMonoBehaviour
 					continue;
 			}
 
-			_BodyData.Add(center + new Vector3Int(x, 0, z));
+			_TrunkData.Add(center + new Vector3Int(x, 0, z));
 		}
 	}
-	
+
 	private void GenerateBranch(string branch,
-			Vector3 startingPosition,
-			Vector3 startingDirection)
+			Vector3 trunkPosition,
+			Vector3 direction)
 	{
-		if (string.IsNullOrEmpty(branch))
-			return;
+		if (string.IsNullOrEmpty(branch)) return;
 
-		Vector3 position = startingPosition;
-		Vector3 direction = startingDirection;
-
-		// Stack to save branch states.
+		Vector3 position = trunkPosition;
 		Stack<TurtleState> stack = new();
+
 		foreach (char c in branch)
 			switch (c)
 			{
 			case 'F':
 			{
-				// Compute next position along the current direction.
 				Vector3 next = position + direction * _LENGTH;
-				_BodyData.Add(Vector3Int.RoundToInt(next));
+				_BranchData.Add(Vector3Int.RoundToInt(next));
 				position = next;
 				break;
 			}
@@ -148,12 +154,9 @@ public class TreeGenerator : SerializedMonoBehaviour
 				break;
 			}
 			case '[':
-			{
 				stack.Push(new TurtleState(position, direction));
 				break;
-			}
 			case ']':
-			{
 				if (stack.Count > 0)
 				{
 					TurtleState state = stack.Pop();
@@ -161,11 +164,6 @@ public class TreeGenerator : SerializedMonoBehaviour
 					direction = state.Direction;
 				}
 
-				break;
-			}
-			default:
-				Debug.LogWarning($"Invalid symbol <color=yellow>{c}</color> " +
-								 "was trying to be parsed!");
 				break;
 			}
 	}
@@ -193,12 +191,13 @@ public class TreeGenerator : SerializedMonoBehaviour
 		if (string.IsNullOrEmpty(_TrunkString))
 			return;
 
-		_BodyData.Clear();
+		_TrunkData.Clear();
+		_BranchData.Clear();
 
 		Vector3 position = Vector3.zero;
 		Vector3 direction = Vector3.up.normalized;
 
-		_BodyData.Add(Vector3Int.RoundToInt(position));
+		_TrunkData.Add(Vector3Int.RoundToInt(position));
 
 		var branchIndex = 0;
 		foreach (char c in _TrunkString)
@@ -241,10 +240,22 @@ public class TreeGenerator : SerializedMonoBehaviour
 			case 'B':
 			{
 				if (position.y < TrunkHeight) break;
-				GenerateBranch(_Branches[branchIndex], position, direction);
+
+				Vector3 branchStart = position;
+				if (direction.x > 0f)
+					branchStart.x += TrunkThickness;
+				else
+					branchStart.x -= TrunkThickness;
+				if (direction.z > 0f)
+					branchStart.z += TrunkThickness;
+				else
+					branchStart.z -= TrunkThickness;
+
+				GenerateBranch(_Branches[branchIndex], branchStart, direction);
 				branchIndex++;
 				break;
 			}
+
 			default:
 				Debug.LogWarning($"Invalid symbol <color=yellow>{c}</color> " +
 								 "was trying to be parsed!");

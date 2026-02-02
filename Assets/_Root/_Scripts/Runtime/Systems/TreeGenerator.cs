@@ -93,16 +93,23 @@ public class TreeGenerator : SerializedMonoBehaviour
 	{
 		Vector3Int center = Vector3Int.RoundToInt(position);
 
-		for (int x = -TrunkThickness; x <= TrunkThickness; x++)
-		for (int z = -TrunkThickness; z <= TrunkThickness; z++)
+		int start = -(TrunkThickness / 2);
+		int end = start + TrunkThickness - 1;
+
+		for (int x = start; x <= end; x++)
+		for (int z = start; z <= end; z++)
 		{
-			if (TrunkShape == TrunkThicknessShape.Circular)
-				if (Mathf.Pow(x, 2f) + Mathf.Pow(z, 2f) > Mathf.Pow(TrunkThickness, 2f))
+			if (TrunkShape == TrunkThicknessShape.Circular && TrunkThickness > 1)
+			{
+				float radius = (TrunkThickness - 1) / 2f;
+				if (Mathf.Pow(x, 2f) + Mathf.Pow(z, 2f) > Mathf.Pow(radius, 2f))
 					continue;
+			}
+
 			_BodyData.Add(center + new Vector3Int(x, 0, z));
 		}
 	}
-
+	
 	private void GenerateBranch(string branch,
 			Vector3 startingPosition,
 			Vector3 startingDirection)

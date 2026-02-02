@@ -89,6 +89,80 @@ public class TreeGenerator : SerializedMonoBehaviour
 		_MeshFilter.sharedMesh = finalMesh;
 	}
 
+	private void AddTrunkVoxels(Vector3 position)
+	{
+		Vector3Int center = Vector3Int.RoundToInt(position);
+
+		for (int x = -TrunkThickness; x <= TrunkThickness; x++)
+		for (int z = -TrunkThickness; z <= TrunkThickness; z++)
+		{
+			if (TrunkShape == TrunkThicknessShape.Circular)
+				if (Mathf.Pow(x, 2f) + Mathf.Pow(z, 2f) > Mathf.Pow(TrunkThickness, 2f))
+					continue;
+			_BodyData.Add(center + new Vector3Int(x, 0, z));
+		}
+	}
+
+	private void GenerateBranch(string branch,
+			Vector3 startingPosition,
+			Vector3 startingDirection)
+	{
+		if (string.IsNullOrEmpty(branch))
+			return;
+
+		Vector3 position = startingPosition;
+		Vector3 direction = startingDirection;
+
+		// Stack to save branch states.
+		Stack<TurtleState> stack = new();
+		foreach (char c in branch)
+			switch (c)
+			{
+			case 'F':
+			{
+				// Compute next position along the current direction.
+				Vector3 next = position + direction * _LENGTH;
+				_BodyData.Add(Vector3Int.RoundToInt(next));
+				position = next;
+				break;
+			}
+			case '+':
+			{
+				Quaternion rotZ = Quaternion.Euler(0f, 0f, AngleXY);
+				Quaternion rotX = Quaternion.Euler(AngleXZ, 0f, 0f);
+				direction = rotZ * rotX * direction;
+				break;
+			}
+			case '-':
+			{
+				Quaternion rotZ = Quaternion.Euler(0f, 0f, -AngleXY);
+				Quaternion rotX = Quaternion.Euler(-AngleXZ, 0f, 0f);
+				direction = rotZ * rotX * direction;
+				break;
+			}
+			case '[':
+			{
+				stack.Push(new TurtleState(position, direction));
+				break;
+			}
+			case ']':
+			{
+				if (stack.Count > 0)
+				{
+					TurtleState state = stack.Pop();
+					position = state.Position;
+					direction = state.Direction;
+				}
+
+				break;
+			}
+			default:
+				Debug.LogWarning($"Invalid symbol <color=yellow>{c}</color> " +
+								 "was trying to be parsed!");
+				break;
+			}
+	}
+
 	private void GenerateLSystem()
 	{
 		string result = Axiom;
@@ -109,7 +183,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 	private void GenerateVoxelsFromString()
 	{
-		if (string.IsNullOrEmpty(_CurrentString))
+		if (string.IsNullOrEmpty(_TrunkString))
 			return;
 
 		_BodyData.Clear();
@@ -119,13 +193,10 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 		_BodyData.Add(Vector3Int.RoundToInt(position));
 
-		// Stack to save branch states.
-		Stack<TurtleState> stack = new();
-		foreach (char c in _CurrentString)
+		var branchIndex = 0;
+		foreach (char c in _TrunkString)
 		{
-			float height = position.y;
-
-			if (height >= MaxHeight)
+			if (position.y >= MaxHeight)
 				break;
 
 			switch (c)
@@ -139,8 +210,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 				int steps = Mathf.CeilToInt(_LENGTH);
 				for (var i = 1; i <= steps; i++)
 				{
-					Vector3 p = Vector3.Lerp(position, next, i / (float)steps);
-					_BodyData.Add(Vector3Int.RoundToInt(p));
+					Vector3 newPos = Vector3.Lerp(position, next, i / (float)steps);
+					AddTrunkVoxels(newPos);
 				}
 
 				position = next;
@@ -148,41 +219,23 @@ public class TreeGenerator : SerializedMonoBehaviour
 			}
 			case '+':
 			{
-				if (height >= TrunkHeight)
-				{
-					Quaternion rotZ = Quaternion.Euler(0f, 0f, AngleXY);
-					Quaternion rotX = Quaternion.Euler(AngleXZ, 0f, 0f);
-					direction = rotZ * rotX * direction;
-				}
-
+				Quaternion rotZ = Quaternion.Euler(0f, 0f, AngleXY);
+				Quaternion rotX = Quaternion.Euler(AngleXZ, 0f, 0f);
+				direction = rotZ * rotX * direction;
 				break;
 			}
 			case '-':
 			{
-				if (height >= TrunkHeight)
-				{
-					Quaternion rotZ = Quaternion.Euler(0f, 0f, -AngleXY);
-					Quaternion rotX = Quaternion.Euler(-AngleXZ, 0f, 0f);
-					direction = rotZ * rotX * direction;
-				}
-
+				Quaternion rotZ = Quaternion.Euler(0f, 0f, -AngleXY);
+				Quaternion rotX = Quaternion.Euler(-AngleXZ, 0f, 0f);
+				direction = rotZ * rotX * direction;
 				break;
 			}
-			case '[':
+			case 'B':
 			{
-				if (height >= TrunkHeight)
-					stack.Push(new TurtleState(position, direction));
-				break;
-			}
-			case ']':
-			{
-				if (stack.Count > 0)
-				{
-					TurtleState state = stack.Pop();
-					position = state.Position;
-					direction = state.Direction;
-				}
-
+				if (position.y < TrunkHeight) break;
+				GenerateBranch(_Branches[branchIndex], position, direction);
+				branchIndex++;
 				break;
 			}
 			default:

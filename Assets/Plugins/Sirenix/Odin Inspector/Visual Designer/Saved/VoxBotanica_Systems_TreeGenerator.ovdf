@@ -84,7 +84,7 @@ Position: $exczd5YHGxXEJuokRQLr5:3
 Position: $exczd5YHGxXEJuokRQLr5:4
 
 # Generate()
-Position: $root:20
+Position: $root:17
 
 # TrunkThickness
 Position: $EmHf6XtAqfknT6EF91btmr:0
@@ -99,4 +99,13 @@ Position: $QgrfVrbTpLPrWS66EkXoUg:2
 	Alignment = Left
 
 # _Branches
+Position: $QgrfVrbTpLPrWS66EkXoUg:6
+
+# _TrunkData
+Position: $QgrfVrbTpLPrWS66EkXoUg:4
+
+# _BranchData
+Position: $QgrfVrbTpLPrWS66EkXoUg:5
+
+# _BranchStrings
 Position: $QgrfVrbTpLPrWS66EkXoUg:3

@@ -45,14 +45,16 @@ public class TreeGenerator : SerializedMonoBehaviour
 	[SerializeField, DisplayAsString,]
 	private string _TrunkString = string.Empty;
 	[SerializeField, ReadOnly,]
-	private List<string> _Branches = new();
+	private List<string> _BranchStrings = new();
+
+	private List<List<Vector3Int>> _Branches = new();
 
 
 	private void Awake()
 	{
 		_MeshFilter = GetComponent<MeshFilter>();
 
-		_Branches.Capacity = 10;
+		_BranchStrings.Capacity = 10;
 	}
 
 	private void Start()
@@ -66,10 +68,12 @@ public class TreeGenerator : SerializedMonoBehaviour
 	{
 		_CurrentString = string.Empty;
 		_TrunkString = string.Empty;
-		_Branches.Clear();
+		_BranchStrings.Clear();
+		_BranchData.Clear();
 		_TrunkData.Clear();
 		if (_MeshFilter.sharedMesh)
 			_MeshFilter.sharedMesh.Clear();
+		_Branches.Clear();
 	}
 
 	[Button]
@@ -81,6 +85,47 @@ public class TreeGenerator : SerializedMonoBehaviour
 		ParseSystem();
 		GenerateVoxelsFromString();
 
+		// Offset the branches based on the trunk thickness.
+		foreach (List<Vector3Int> branch in _Branches)
+		{
+			Vector3Int startPoint = branch.First();
+			Vector3Int endPoint = branch.Last();
+			Vector3Int difference = endPoint - startPoint;
+
+			int start = -(TrunkThickness / 2);
+			int end = start + TrunkThickness - 1;
+
+			// Dominant direction.
+			if (Mathf.Abs(difference.x) > Mathf.Abs(difference.z)) //< X dominant.
+			{
+				// Figure out if positive or negative.
+				int offsetX = difference.x > 0 ? end : start;
+
+				for (var k = 0; k < branch.Count; k++)
+				{
+					Vector3Int point = branch[k];
+					point.x += offsetX;
+					branch[k] = point;
+				}
+			}
+			else //< Z dominant.
+			{
+				// Figure out if positive or negative.
+				int offsetZ = difference.z > 0 ? end : start;
+
+				for (var k = 0; k < branch.Count; k++)
+				{
+					Vector3Int point = branch[k];
+					point.z += offsetZ;
+					branch[k] = point;
+				}
+			}
+		}
+
+		// Update the "_BranchData" position.
+		foreach (Vector3Int point in _Branches.SelectMany(branch => branch))
+			_BranchData.Add(point);
+
 		// Create visuals.
 		_TrunkData.ClearBlocks(); //< Update visuals.
 		foreach (Vector3 pos in _TrunkData.Positions)
@@ -90,6 +135,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 		foreach (Vector3 pos in _BranchData.Positions)
 			_BranchData.Add(new Block(pos, _BranchData.Positions, BlockType.Dirt));
 
+		// Gather all meshes.
 		List<Mesh> meshes = new();
 		meshes.AddRange(_TrunkData.GetMeshes());
 		meshes.AddRange(_BranchData.GetMeshes());
@@ -120,22 +166,24 @@ public class TreeGenerator : SerializedMonoBehaviour
 		}
 	}
 
-	private void GenerateBranch(string branch,
+	private void GenerateBranch(string sententialForm,
 			Vector3 trunkPosition,
 			Vector3 direction)
 	{
-		if (string.IsNullOrEmpty(branch)) return;
+		if (string.IsNullOrEmpty(sententialForm)) return;
 
 		Vector3 position = trunkPosition;
 		Stack<TurtleState> stack = new();
 
-		foreach (char c in branch)
+		// Add the starting position.
+		var branch = new List<Vector3Int> { Vector3Int.RoundToInt(position), };
+		foreach (char c in sententialForm.TakeWhile(c => !(position.y >= MaxHeight)))
 			switch (c)
 			{
 			case 'F':
 			{
 				Vector3 next = position + direction * _LENGTH;
-				_BranchData.Add(Vector3Int.RoundToInt(next));
+				branch.Add(Vector3Int.RoundToInt(next));
 				position = next;
 				break;
 			}
@@ -166,6 +214,9 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 				break;
 			}
+
+		// Add the constructed branch.
+		_Branches.Add(branch);
 	}
 
 	private void GenerateLSystem()
@@ -191,20 +242,14 @@ public class TreeGenerator : SerializedMonoBehaviour
 		if (string.IsNullOrEmpty(_TrunkString))
 			return;
 
-		_TrunkData.Clear();
-		_BranchData.Clear();
-
 		Vector3 position = Vector3.zero;
 		Vector3 direction = Vector3.up.normalized;
 
+		AddTrunkVoxels(position);
 		_TrunkData.Add(Vector3Int.RoundToInt(position));
 
 		var branchIndex = 0;
-		foreach (char c in _TrunkString)
-		{
-			if (position.y >= MaxHeight)
-				break;
-
+		foreach (char c in _TrunkString.TakeWhile(c => !(position.y >= MaxHeight)))
 			switch (c)
 			{
 			case 'F':
@@ -240,18 +285,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 			case 'B':
 			{
 				if (position.y < TrunkHeight) break;
-
-				Vector3 branchStart = position;
-				if (direction.x > 0f)
-					branchStart.x += TrunkThickness;
-				else
-					branchStart.x -= TrunkThickness;
-				if (direction.z > 0f)
-					branchStart.z += TrunkThickness;
-				else
-					branchStart.z -= TrunkThickness;
-
-				GenerateBranch(_Branches[branchIndex], branchStart, direction);
+				GenerateBranch(_BranchStrings[branchIndex], position, direction);
 				branchIndex++;
 				break;
 			}
@@ -261,13 +295,12 @@ public class TreeGenerator : SerializedMonoBehaviour
 								 "was trying to be parsed!");
 				break;
 			}
-		}
 	}
 
 	private void ParseSystem()
 	{
 		_TrunkString = string.Empty;
-		_Branches.Clear();
+		_BranchStrings.Clear();
 
 		const char BRANCH_SYMBOL = 'B';
 		var depth = 0;
@@ -296,7 +329,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 				currentBranch += ']';
 
 				if (depth == 0)
-					_Branches.Add(currentBranch);
+					_BranchStrings.Add(currentBranch);
 
 				continue;
 			}

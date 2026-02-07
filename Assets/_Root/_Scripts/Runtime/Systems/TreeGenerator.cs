@@ -26,21 +26,35 @@ public class TreeGenerator : SerializedMonoBehaviour
 	public float TrunkHeight = 3f;
 	[MinValue(1f)]
 	public float MaxHeight = 20f;
-	[SerializeField, Range(0f, 360f),]
-	private float AngleXZ = 25f;
+	[Range(0f, 360f),]
+	public float AngleXZ = 25f;
+	[MinValue(1)]
+	public int TrunkThickness = 2;
+	public TrunkThicknessShape TrunkShape = TrunkThicknessShape.Circular;
 
 	[SerializeField]
 	private Dictionary<string, string> _Rules = new() { { "F", "F[+F]F[-F]F" }, };
 	[SerializeField, DisplayAsString,]
-	private string _CurrentString;
+	private string _CurrentString = string.Empty;
 	[SerializeField, ReadOnly,]
-	private BlockData _BodyData = new();
+	private BlockData _TrunkData = new();
+	[SerializeField, ReadOnly,]
+	private BlockData _BranchData = new();
 	[SerializeField]
 	private MeshFilter _MeshFilter;
+	[SerializeField, DisplayAsString,]
+	private string _TrunkString = string.Empty;
+	[SerializeField, ReadOnly,]
+	private List<string> _BranchStrings = new();
+
+	private List<List<Vector3Int>> _Branches = new();
+
 
 	private void Awake()
 	{
 		_MeshFilter = GetComponent<MeshFilter>();
+
+		_BranchStrings.Capacity = 10;
 	}
 
 	private void Start()
@@ -53,9 +67,13 @@ public class TreeGenerator : SerializedMonoBehaviour
 	public void Clear()
 	{
 		_CurrentString = string.Empty;
-		_BodyData.Clear();
+		_TrunkString = string.Empty;
+		_BranchStrings.Clear();
+		_BranchData.Clear();
+		_TrunkData.Clear();
 		if (_MeshFilter.sharedMesh)
 			_MeshFilter.sharedMesh.Clear();
+		_Branches.Clear();
 	}
 
 	[Button]
@@ -63,22 +81,145 @@ public class TreeGenerator : SerializedMonoBehaviour
 	{
 		Clear();
 
-		_CurrentString = GenerateLSystem();
-		Debug.Log($"Current String: <color=yellow>{_CurrentString}</color>");
-
+		GenerateLSystem();
+		ParseSystem();
 		GenerateVoxelsFromString();
 
+		// Offset the branches based on the trunk thickness.
+		foreach (List<Vector3Int> branch in _Branches)
+		{
+			Vector3Int startPoint = branch.First();
+			Vector3Int endPoint = branch.Last();
+			Vector3Int difference = endPoint - startPoint;
+
+			int start = -(TrunkThickness / 2);
+			int end = start + TrunkThickness - 1;
+
+			// Dominant direction.
+			if (Mathf.Abs(difference.x) > Mathf.Abs(difference.z)) //< X dominant.
+			{
+				// Figure out if positive or negative.
+				int offsetX = difference.x > 0 ? end : start;
+
+				for (var k = 0; k < branch.Count; k++)
+				{
+					Vector3Int point = branch[k];
+					point.x += offsetX;
+					branch[k] = point;
+				}
+			}
+			else //< Z dominant.
+			{
+				// Figure out if positive or negative.
+				int offsetZ = difference.z > 0 ? end : start;
+
+				for (var k = 0; k < branch.Count; k++)
+				{
+					Vector3Int point = branch[k];
+					point.z += offsetZ;
+					branch[k] = point;
+				}
+			}
+		}
+
+		// Update the "_BranchData" position.
+		foreach (Vector3Int point in _Branches.SelectMany(branch => branch))
+			_BranchData.Add(point);
+
 		// Create visuals.
-		_BodyData.ClearBlocks(); //< Update visuals.
-		foreach (Vector3 pos in _BodyData.Positions)
-			_BodyData.Add(new Block(pos, _BodyData.Positions, BlockType.Dirt));
+		_TrunkData.ClearBlocks(); //< Update visuals.
+		foreach (Vector3 pos in _TrunkData.Positions)
+			_TrunkData.Add(new Block(pos, _TrunkData.Positions, BlockType.Dirt));
+
+		_BranchData.ClearBlocks(); //< Update visuals.
+		foreach (Vector3 pos in _BranchData.Positions)
+			_BranchData.Add(new Block(pos, _BranchData.Positions, BlockType.Dirt));
+
+		// Gather all meshes.
+		List<Mesh> meshes = new();
+		meshes.AddRange(_TrunkData.GetMeshes());
+		meshes.AddRange(_BranchData.GetMeshes());
 
 		// Combine all cube meshes.
-		Mesh finalMesh = MeshUtils.MergeMeshes(_BodyData.GetMeshes());
+		Mesh finalMesh = MeshUtils.MergeMeshes(meshes.ToArray());
 		_MeshFilter.sharedMesh = finalMesh;
 	}
 
-	private string GenerateLSystem()
+	private void AddTrunkVoxels(Vector3 position)
+	{
+		Vector3Int center = Vector3Int.RoundToInt(position);
+
+		int start = -(TrunkThickness / 2);
+		int end = start + TrunkThickness - 1;
+
+		for (int x = start; x <= end; x++)
+		for (int z = start; z <= end; z++)
+		{
+			if (TrunkShape == TrunkThicknessShape.Circular && TrunkThickness > 1)
+			{
+				float radius = (TrunkThickness - 1) / 2f;
+				if (Mathf.Pow(x, 2f) + Mathf.Pow(z, 2f) > Mathf.Pow(radius, 2f))
+					continue;
+			}
+
+			_TrunkData.Add(center + new Vector3Int(x, 0, z));
+		}
+	}
+
+	private void GenerateBranch(string sententialForm,
+			Vector3 trunkPosition,
+			Vector3 direction)
+	{
+		if (string.IsNullOrEmpty(sententialForm)) return;
+
+		Vector3 position = trunkPosition;
+		Stack<TurtleState> stack = new();
+
+		// Add the starting position.
+		var branch = new List<Vector3Int> { Vector3Int.RoundToInt(position), };
+		foreach (char c in sententialForm.TakeWhile(c => !(position.y >= MaxHeight)))
+			switch (c)
+			{
+			case 'F':
+			{
+				Vector3 next = position + direction * _LENGTH;
+				branch.Add(Vector3Int.RoundToInt(next));
+				position = next;
+				break;
+			}
+			case '+':
+			{
+				Quaternion rotZ = Quaternion.Euler(0f, 0f, AngleXY);
+				Quaternion rotX = Quaternion.Euler(AngleXZ, 0f, 0f);
+				direction = rotZ * rotX * direction;
+				break;
+			}
+			case '-':
+			{
+				Quaternion rotZ = Quaternion.Euler(0f, 0f, -AngleXY);
+				Quaternion rotX = Quaternion.Euler(-AngleXZ, 0f, 0f);
+				direction = rotZ * rotX * direction;
+				break;
+			}
+			case '[':
+				stack.Push(new TurtleState(position, direction));
+				break;
+			case ']':
+				if (stack.Count > 0)
+				{
+					TurtleState state = stack.Pop();
+					position = state.Position;
+					direction = state.Direction;
+				}
+
+				break;
+			}
+
+		// Add the constructed branch.
+		_Branches.Add(branch);
+	}
+
+	private void GenerateLSystem()
 	{
 		string result = Axiom;
 
@@ -92,30 +233,23 @@ public class TreeGenerator : SerializedMonoBehaviour
 			result = newString;
 		}
 
-		return result;
+		_CurrentString = result;
+		Debug.Log($"Current String: <color=yellow>{_CurrentString}</color>");
 	}
 
 	private void GenerateVoxelsFromString()
 	{
-		if (string.IsNullOrEmpty(_CurrentString))
+		if (string.IsNullOrEmpty(_TrunkString))
 			return;
-
-		_BodyData.Clear();
 
 		Vector3 position = Vector3.zero;
 		Vector3 direction = Vector3.up.normalized;
 
-		_BodyData.Add(Vector3Int.RoundToInt(position));
+		AddTrunkVoxels(position);
+		_TrunkData.Add(Vector3Int.RoundToInt(position));
 
-		// Stack to save branch states.
-		Stack<TurtleState> stack = new();
-		foreach (char c in _CurrentString)
-		{
-			float height = position.y;
-
-			if (height >= MaxHeight)
-				break;
-
+		var branchIndex = 0;
+		foreach (char c in _TrunkString.TakeWhile(c => !(position.y >= MaxHeight)))
 			switch (c)
 			{
 			case 'F':
@@ -127,8 +261,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 				int steps = Mathf.CeilToInt(_LENGTH);
 				for (var i = 1; i <= steps; i++)
 				{
-					Vector3 p = Vector3.Lerp(position, next, i / (float)steps);
-					_BodyData.Add(Vector3Int.RoundToInt(p));
+					Vector3 newPos = Vector3.Lerp(position, next, i / (float)steps);
+					AddTrunkVoxels(newPos);
 				}
 
 				position = next;
@@ -136,45 +270,82 @@ public class TreeGenerator : SerializedMonoBehaviour
 			}
 			case '+':
 			{
-				if (height >= TrunkHeight)
-				{
-					Quaternion rotZ = Quaternion.Euler(0f, 0f, AngleXY);
-					Quaternion rotX = Quaternion.Euler(AngleXZ, 0f, 0f);
-					direction = rotZ * rotX * direction;
-				}
-
+				Quaternion rotZ = Quaternion.Euler(0f, 0f, AngleXY);
+				Quaternion rotX = Quaternion.Euler(AngleXZ, 0f, 0f);
+				direction = rotZ * rotX * direction;
 				break;
 			}
 			case '-':
 			{
-				if (height >= TrunkHeight)
-				{
-					Quaternion rotZ = Quaternion.Euler(0f, 0f, -AngleXY);
-					Quaternion rotX = Quaternion.Euler(-AngleXZ, 0f, 0f);
-					direction = rotZ * rotX * direction;
-				}
-
+				Quaternion rotZ = Quaternion.Euler(0f, 0f, -AngleXY);
+				Quaternion rotX = Quaternion.Euler(-AngleXZ, 0f, 0f);
+				direction = rotZ * rotX * direction;
 				break;
 			}
+			case 'B':
+			{
+				if (position.y < TrunkHeight) break;
+				GenerateBranch(_BranchStrings[branchIndex], position, direction);
+				branchIndex++;
+				break;
+			}
+
+			default:
+				Debug.LogWarning($"Invalid symbol <color=yellow>{c}</color> " +
+								 "was trying to be parsed!");
+				break;
+			}
+	}
+
+	private void ParseSystem()
+	{
+		_TrunkString = string.Empty;
+		_BranchStrings.Clear();
+
+		const char BRANCH_SYMBOL = 'B';
+		var depth = 0;
+		var currentBranch = string.Empty;
+
+		foreach (char c in _CurrentString)
+		{
+			switch (c)
+			{
 			case '[':
 			{
-				if (height >= TrunkHeight)
-					stack.Push(new TurtleState(position, direction));
-				break;
+				if (depth == 0)
+				{
+					_TrunkString += BRANCH_SYMBOL;
+					currentBranch = "[";
+				}
+				else
+					currentBranch += c;
+
+				depth++;
+				continue;
 			}
 			case ']':
 			{
-				if (stack.Count > 0)
-				{
-					TurtleState state = stack.Pop();
-					position = state.Position;
-					direction = state.Direction;
-				}
+				depth--;
+				currentBranch += ']';
 
-				break;
+				if (depth == 0)
+					_BranchStrings.Add(currentBranch);
+
+				continue;
 			}
 			}
+
+			if (depth == 0)
+				_TrunkString += c;
+			else
+				currentBranch += c;
 		}
+	}
+
+	public enum TrunkThicknessShape
+	{
+		Circular,
+		Square,
 	}
 
 

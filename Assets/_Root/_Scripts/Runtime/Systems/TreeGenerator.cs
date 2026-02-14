@@ -53,7 +53,6 @@ public class TreeGenerator : SerializedMonoBehaviour
 	private void Awake()
 	{
 		_MeshFilter = GetComponent<MeshFilter>();
-
 		_BranchStrings.Capacity = 10;
 	}
 
@@ -108,7 +107,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 					branch[k] = point;
 				}
 			}
-			else //< Z dominant.
+
 			{
 				// Figure out if positive or negative.
 				int offsetZ = difference.z > 0 ? end : start;
@@ -189,16 +188,14 @@ public class TreeGenerator : SerializedMonoBehaviour
 			}
 			case '+':
 			{
-				Quaternion rotZ = Quaternion.Euler(0f, 0f, AngleXY);
-				Quaternion rotX = Quaternion.Euler(AngleXZ, 0f, 0f);
-				direction = rotZ * rotX * direction;
+				Quaternion rot = Quaternion.Euler(0f, 0f, AngleXY);
+				direction = rot * direction;
 				break;
 			}
 			case '-':
 			{
-				Quaternion rotZ = Quaternion.Euler(0f, 0f, -AngleXY);
-				Quaternion rotX = Quaternion.Euler(-AngleXZ, 0f, 0f);
-				direction = rotZ * rotX * direction;
+				Quaternion rot = Quaternion.Euler(0f, 0f, -AngleXY);
+				direction = rot * direction;
 				break;
 			}
 			case '[':
@@ -268,24 +265,29 @@ public class TreeGenerator : SerializedMonoBehaviour
 				position = next;
 				break;
 			}
-			case '+':
-			{
-				Quaternion rotZ = Quaternion.Euler(0f, 0f, AngleXY);
-				Quaternion rotX = Quaternion.Euler(AngleXZ, 0f, 0f);
-				direction = rotZ * rotX * direction;
-				break;
-			}
-			case '-':
-			{
-				Quaternion rotZ = Quaternion.Euler(0f, 0f, -AngleXY);
-				Quaternion rotX = Quaternion.Euler(-AngleXZ, 0f, 0f);
-				direction = rotZ * rotX * direction;
-				break;
-			}
 			case 'B':
 			{
 				if (position.y < TrunkHeight) break;
-				GenerateBranch(_BranchStrings[branchIndex], position, direction);
+
+				Vector3 trunkDir = direction.normalized;
+
+				// Pick an arbitrary perpendicular axis
+				Vector3 axis = Vector3.Cross(trunkDir, Vector3.up);
+				if (axis == Vector3.zero)
+					axis = Vector3.Cross(trunkDir, Vector3.forward);
+				axis.Normalize();
+
+				// Random rotation around trunk
+				float randomAzimuth = Random.Range(0f, 360f);
+				Quaternion rot = Quaternion.AngleAxis(randomAzimuth, axis);
+
+				// Base XZ rotation
+				Quaternion baseRot = Quaternion.Euler(0f, AngleXZ, 0f);
+
+				// Apply rotations
+				Vector3 branchDirection = rot * baseRot * trunkDir;
+
+				GenerateBranch(_BranchStrings[branchIndex], position, branchDirection);
 				branchIndex++;
 				break;
 			}

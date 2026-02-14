@@ -2,6 +2,7 @@
 using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Serialization;
 using VoxBotanica.Components;
 using VoxBotanica.Types;
 using VoxBotanica.Utilities;
@@ -20,14 +21,14 @@ public class TreeGenerator : SerializedMonoBehaviour
 	public string Axiom = "F";
 	[MinValue(1)]
 	public int Iterations = 3;
-	[Range(5f, 90f)]
-	public float AngleXY = 25f;
+	[FormerlySerializedAs("AngleXY"), Range(5f, 90f),]
+	public float BranchTilt = 25f;
 	[MinValue(0.1f)]
 	public float TrunkHeight = 3f;
 	[MinValue(1f)]
 	public float MaxHeight = 20f;
-	[Range(0f, 360f),]
-	public float AngleXZ = 25f;
+	[FormerlySerializedAs("AngleXZ"), Range(0f, 360f),]
+	public float BranchRadialPosition = 25f;
 	[MinValue(1)]
 	public int TrunkThickness = 2;
 	public TrunkThicknessShape TrunkShape = TrunkThicknessShape.Circular;
@@ -134,13 +135,47 @@ public class TreeGenerator : SerializedMonoBehaviour
 		foreach (Vector3 pos in _BranchData.Positions)
 			_BranchData.Add(new Block(pos, _BranchData.Positions, BlockType.Dirt));
 
-		// Gather all meshes.
-		List<Mesh> meshes = new();
-		meshes.AddRange(_TrunkData.GetMeshes());
-		meshes.AddRange(_BranchData.GetMeshes());
+		// Merge trunk and branch meshes individually
+		Mesh trunkMesh = MeshUtils.MergeMeshes(_TrunkData.GetMeshes());
+		Mesh branchMesh = MeshUtils.MergeMeshes(_BranchData.GetMeshes());
 
-		// Combine all cube meshes.
-		Mesh finalMesh = MeshUtils.MergeMeshes(meshes.ToArray());
+		// Create a new mesh for final output
+		var finalMesh = new Mesh { name = "Tree_Final", };
+
+		// Combine vertices
+		var vertices = new Vector3[trunkMesh.vertexCount + branchMesh.vertexCount];
+		trunkMesh.vertices.CopyTo(vertices, 0);
+		branchMesh.vertices.CopyTo(vertices, trunkMesh.vertexCount);
+		finalMesh.vertices = vertices;
+
+		// Combine normals
+		var normals = new Vector3[vertices.Length];
+		trunkMesh.normals.CopyTo(normals, 0);
+		branchMesh.normals.CopyTo(normals, trunkMesh.vertexCount);
+		finalMesh.normals = normals;
+
+		// Combine UVs
+		var uvs = new Vector2[vertices.Length];
+		trunkMesh.uv.CopyTo(uvs, 0);
+		branchMesh.uv.CopyTo(uvs, trunkMesh.vertexCount);
+		finalMesh.uv = uvs;
+
+		// Combine triangles with proper offsets
+		int[] trunkTriangles = trunkMesh.triangles;
+		var branchTriangles = new int[branchMesh.triangles.Length];
+		for (var i = 0; i < branchMesh.triangles.Length; i++)
+			branchTriangles[i] = branchMesh.triangles[i] + trunkMesh.vertexCount;
+
+		// Assign triangles to sub-meshes
+		finalMesh.subMeshCount = 2;
+		finalMesh.SetTriangles(trunkTriangles, 0);
+		finalMesh.SetTriangles(branchTriangles, 1);
+
+		// Optionally recalc bounds/tangents
+		finalMesh.RecalculateBounds();
+		finalMesh.RecalculateTangents();
+
+		// Assign to MeshFilter
 		_MeshFilter.sharedMesh = finalMesh;
 	}
 
@@ -188,13 +223,13 @@ public class TreeGenerator : SerializedMonoBehaviour
 			}
 			case '+':
 			{
-				Quaternion rot = Quaternion.Euler(0f, 0f, AngleXY);
+				Quaternion rot = Quaternion.Euler(0f, 0f, BranchTilt);
 				direction = rot * direction;
 				break;
 			}
 			case '-':
 			{
-				Quaternion rot = Quaternion.Euler(0f, 0f, -AngleXY);
+				Quaternion rot = Quaternion.Euler(0f, 0f, -BranchTilt);
 				direction = rot * direction;
 				break;
 			}
@@ -282,7 +317,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 				Quaternion rot = Quaternion.AngleAxis(randomAzimuth, axis);
 
 				// Base XZ rotation
-				Quaternion baseRot = Quaternion.Euler(0f, AngleXZ, 0f);
+				Quaternion baseRot = Quaternion.Euler(0f, BranchRadialPosition, 0f);
 
 				// Apply rotations
 				Vector3 branchDirection = rot * baseRot * trunkDir;
@@ -392,8 +427,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 			case '+':
 				if (height >= TrunkHeight)
 				{
-					Quaternion rotZ = Quaternion.Euler(0f, 0f, AngleXY);
-					Quaternion rotX = Quaternion.Euler(AngleXZ, 0f, 0f);
+					Quaternion rotZ = Quaternion.Euler(0f, 0f, BranchTilt);
+					Quaternion rotX = Quaternion.Euler(BranchRadialPosition, 0f, 0f);
 					direction = rotZ * rotX * direction;
 				}
 
@@ -401,8 +436,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 			case '-':
 				if (height >= TrunkHeight)
 				{
-					Quaternion rotZ = Quaternion.Euler(0f, 0f, -AngleXY);
-					Quaternion rotX = Quaternion.Euler(-AngleXZ, 0f, 0f);
+					Quaternion rotZ = Quaternion.Euler(0f, 0f, -BranchTilt);
+					Quaternion rotX = Quaternion.Euler(-BranchRadialPosition, 0f, 0f);
 					direction = rotZ * rotX * direction;
 				}
 

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
-using VertexData =
-		System.Tuple<UnityEngine.Vector3, UnityEngine.Vector3, UnityEngine.Vector2>;
-
+using VertexData = System.Tuple<UnityEngine.Vector3,
+		UnityEngine.Vector3, UnityEngine.Vector2>;
 
 // Copied from my other project VoxelWorld which was based off the web course
 // "Create Minecraft-Inspired Voxel Worlds - Unity 6 Compatible" By Penny de Byl.
@@ -76,8 +76,7 @@ public static class MeshUtils
 		return mergedMesh;
 	}
 
-	public static void ExtractArrays(Dictionary<VertexData, int> list,
-			Mesh mesh)
+	public static void ExtractArrays(Dictionary<VertexData, int> list, Mesh mesh)
 	{
 		List<Vector3> vertices = new();
 		List<Vector3> normals = new();
@@ -97,24 +96,60 @@ public static class MeshUtils
 		mesh.uv = uvs.ToArray();
 	}
 
-	// Fractal Brownian Motion.
-	public static float fBM(float x,
-			float z,
-			int octaves = 1,
-			float scale = 1f,
-			float heightScale = 1f,
-			float heightOffset = 0f,
-			float frequency = 1f)
+	// Added after the import. This is from project VoxBotanica.
+	public static Mesh CreateSubMeshes(List<Mesh> subMeshes)
 	{
-		var total = 0f;
-		for (var i = 0; i < octaves; i++)
+		Mesh finalMesh = new();
+
+		// Calculate total vertex count.
+		int totalVertexCount = subMeshes.Sum(t => t.vertexCount);
+
+		// Allocate combined buffers.
+		var vertices = new Vector3[totalVertexCount];
+		var normals = new Vector3[totalVertexCount];
+		var uvs = new Vector2[totalVertexCount];
+
+		// Copy vertex data with cumulative offset.
+		var vertexOffset = 0;
+		foreach (Mesh mesh in subMeshes)
 		{
-			total += Mathf.PerlinNoise(x * scale * frequency,
-									   z * scale * frequency) * heightScale;
-			frequency *= 2f;
+			mesh.vertices.CopyTo(vertices, vertexOffset);
+
+			if (mesh.normals != null && mesh.normals.Length == mesh.vertexCount)
+				mesh.normals.CopyTo(normals, vertexOffset);
+
+			if (mesh.uv != null && mesh.uv.Length == mesh.vertexCount)
+				mesh.uv.CopyTo(uvs, vertexOffset);
+
+			vertexOffset += mesh.vertexCount;
 		}
 
-		return total + heightOffset;
+		finalMesh.vertices = vertices;
+		finalMesh.normals = normals;
+		finalMesh.uv = uvs;
+
+		// Combine triangles per submesh with proper offsets.
+		finalMesh.subMeshCount = subMeshes.Count;
+		vertexOffset = 0;
+		for (var i = 0; i < subMeshes.Count; i++)
+		{
+			Mesh mesh = subMeshes[i];
+			int[] triangles = mesh.triangles;
+
+			var adjusted = new int[triangles.Length];
+			for (var t = 0; t < triangles.Length; t++)
+				adjusted[t] = triangles[t] + vertexOffset;
+
+			finalMesh.SetTriangles(adjusted, i);
+
+			vertexOffset += mesh.vertexCount;
+		}
+
+		// Final recalculation.
+		finalMesh.RecalculateBounds();
+		finalMesh.RecalculateTangents();
+
+		return finalMesh;
 	}
 }
 }

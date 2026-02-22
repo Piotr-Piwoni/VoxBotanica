@@ -18,22 +18,26 @@ using TurtleState = TurtleState<Vector3>;
 public class TreeGenerator : SerializedMonoBehaviour
 {
 	private const int _LENGTH = 1;
+	[OnValueChanged(nameof(Generate))]
 	public string Axiom = "F";
-	[MinValue(1)]
+	[MinValue(1), OnValueChanged(nameof(Generate)),]
 	public int Iterations = 3;
-	[FormerlySerializedAs("AngleXY"), Range(5f, 90f),]
+	[FormerlySerializedAs("AngleXY"), Range(5f, 90f),
+	 OnValueChanged(nameof(Generate)),]
 	public float BranchTilt = 25f;
-	[MinValue(0.1f)]
+	[MinValue(0.1f), OnValueChanged(nameof(Generate)),]
 	public float TrunkHeight = 3f;
-	[MinValue(1f)]
+	[MinValue(1f), OnValueChanged(nameof(Generate)),]
 	public float MaxHeight = 20f;
-	[FormerlySerializedAs("AngleXZ"), Range(0f, 360f),]
+	[FormerlySerializedAs("AngleXZ"), Range(0f, 360f),
+	 OnValueChanged(nameof(Generate)),]
 	public float BranchRadialPosition = 25f;
-	[MinValue(1)]
+	[MinValue(1), OnValueChanged(nameof(Generate)),]
 	public int TrunkThickness = 2;
+	[OnValueChanged(nameof(Generate))]
 	public TrunkThicknessShape TrunkShape = TrunkThicknessShape.Circular;
 
-	[SerializeField]
+	[SerializeField, OnValueChanged(nameof(Generate)),]
 	private Dictionary<string, string> _Rules = new() { { "F", "F[+F]F[-F]F" }, };
 	[SerializeField, DisplayAsString,]
 	private string _CurrentString = string.Empty;
@@ -79,104 +83,19 @@ public class TreeGenerator : SerializedMonoBehaviour
 	[Button]
 	public void Generate()
 	{
-		Clear();
-
-		GenerateLSystem();
-		ParseSystem();
-		GenerateVoxelsFromString();
-
-		// Offset the branches based on the trunk thickness.
-		foreach (List<Vector3Int> branch in _Branches)
+		if (!_MeshFilter)
 		{
-			Vector3Int startPoint = branch.First();
-			Vector3Int endPoint = branch.Last();
-			Vector3Int difference = endPoint - startPoint;
-
-			int start = -(TrunkThickness / 2);
-			int end = start + TrunkThickness - 1;
-
-			// Dominant direction.
-			if (Mathf.Abs(difference.x) > Mathf.Abs(difference.z)) //< X dominant.
-			{
-				// Figure out if positive or negative.
-				int offsetX = difference.x > 0 ? end : start;
-
-				for (var k = 0; k < branch.Count; k++)
-				{
-					Vector3Int point = branch[k];
-					point.x += offsetX;
-					branch[k] = point;
-				}
-			}
-
-			{
-				// Figure out if positive or negative.
-				int offsetZ = difference.z > 0 ? end : start;
-
-				for (var k = 0; k < branch.Count; k++)
-				{
-					Vector3Int point = branch[k];
-					point.z += offsetZ;
-					branch[k] = point;
-				}
-			}
+			Debug.LogError("There's no valid Mesh Filter to use!");
+			return;
 		}
 
-		// Update the "_BranchData" position.
-		foreach (Vector3Int point in _Branches.SelectMany(branch => branch))
-			_BranchData.Add(point);
+		Clear();
+		GenerateLSystem();
 
-		// Create visuals.
-		_TrunkData.ClearBlocks(); //< Update visuals.
-		foreach (Vector3 pos in _TrunkData.Positions)
-			_TrunkData.Add(new Block(pos, _TrunkData.Positions, BlockType.Dirt));
-
-		_BranchData.ClearBlocks(); //< Update visuals.
-		foreach (Vector3 pos in _BranchData.Positions)
-			_BranchData.Add(new Block(pos, _BranchData.Positions, BlockType.Dirt));
-
-		// Merge trunk and branch meshes individually
-		Mesh trunkMesh = MeshUtils.MergeMeshes(_TrunkData.GetMeshes());
-		Mesh branchMesh = MeshUtils.MergeMeshes(_BranchData.GetMeshes());
-
-		// Create a new mesh for final output
-		var finalMesh = new Mesh { name = "Tree_Final", };
-
-		// Combine vertices
-		var vertices = new Vector3[trunkMesh.vertexCount + branchMesh.vertexCount];
-		trunkMesh.vertices.CopyTo(vertices, 0);
-		branchMesh.vertices.CopyTo(vertices, trunkMesh.vertexCount);
-		finalMesh.vertices = vertices;
-
-		// Combine normals
-		var normals = new Vector3[vertices.Length];
-		trunkMesh.normals.CopyTo(normals, 0);
-		branchMesh.normals.CopyTo(normals, trunkMesh.vertexCount);
-		finalMesh.normals = normals;
-
-		// Combine UVs
-		var uvs = new Vector2[vertices.Length];
-		trunkMesh.uv.CopyTo(uvs, 0);
-		branchMesh.uv.CopyTo(uvs, trunkMesh.vertexCount);
-		finalMesh.uv = uvs;
-
-		// Combine triangles with proper offsets
-		int[] trunkTriangles = trunkMesh.triangles;
-		var branchTriangles = new int[branchMesh.triangles.Length];
-		for (var i = 0; i < branchMesh.triangles.Length; i++)
-			branchTriangles[i] = branchMesh.triangles[i] + trunkMesh.vertexCount;
-
-		// Assign triangles to sub-meshes
-		finalMesh.subMeshCount = 2;
-		finalMesh.SetTriangles(trunkTriangles, 0);
-		finalMesh.SetTriangles(branchTriangles, 1);
-
-		// Optionally recalc bounds/tangents
-		finalMesh.RecalculateBounds();
-		finalMesh.RecalculateTangents();
-
-		// Assign to MeshFilter
-		_MeshFilter.sharedMesh = finalMesh;
+		if (string.IsNullOrEmpty(_CurrentString)) return;
+		ParseSystem();
+		GenerateVoxelsFromString();
+		Render();
 	}
 
 	private void AddTrunkVoxels(Vector3 position)
@@ -211,7 +130,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 		// Add the starting position.
 		var branch = new List<Vector3Int> { Vector3Int.RoundToInt(position), };
-		foreach (char c in sententialForm.TakeWhile(c => !(position.y >= MaxHeight)))
+		foreach (char c in sententialForm.TakeWhile(_ => !(position.y >= MaxHeight)))
 			switch (c)
 			{
 			case 'F':
@@ -379,6 +298,75 @@ public class TreeGenerator : SerializedMonoBehaviour
 		}
 	}
 
+	private void Render()
+	{
+		// Offset the branches based on the trunk thickness.
+		foreach (List<Vector3Int> branch in _Branches)
+		{
+			Vector3Int startPoint = branch.First();
+			Vector3Int endPoint = branch.Last();
+			Vector3Int difference = endPoint - startPoint;
+
+			int start = -(TrunkThickness / 2);
+			int end = start + TrunkThickness - 1;
+
+			// Dominant direction.
+			if (Mathf.Abs(difference.x) > Mathf.Abs(difference.z)) //< X dominant.
+			{
+				// Figure out if positive or negative.
+				int offsetX = difference.x > 0 ? end : start;
+
+				for (var k = 0; k < branch.Count; k++)
+				{
+					Vector3Int point = branch[k];
+					point.x += offsetX;
+					branch[k] = point;
+				}
+			}
+
+			{
+				// Figure out if positive or negative.
+				int offsetZ = difference.z > 0 ? end : start;
+
+				for (var k = 0; k < branch.Count; k++)
+				{
+					Vector3Int point = branch[k];
+					point.z += offsetZ;
+					branch[k] = point;
+				}
+			}
+		}
+
+		// Update the "_BranchData" position.
+		// Ignore the first intersecting branch block.
+		foreach (List<Vector3Int> branch in _Branches)
+			_BranchData.AddRange(_TrunkData.Contains(branch.First()) ?
+										 branch.GetRange(1, branch.Count - 1) :
+										 branch);
+
+		// Create visuals.
+		_TrunkData.ClearBlocks(); //< Update visuals.
+		foreach (Vector3 pos in _TrunkData.Positions)
+			_TrunkData.Add(new Block(pos, _TrunkData.Positions, BlockType.Dirt));
+
+		_BranchData.ClearBlocks(); //< Update visuals.
+		foreach (Vector3 pos in _BranchData.Positions)
+			_BranchData.Add(new Block(pos, _BranchData.Positions, BlockType.Dirt));
+
+		// Merge meshes individually.
+		List<Mesh> meshes = new()
+		{
+				MeshUtils.MergeMeshes(_TrunkData.GetMeshes()),
+				MeshUtils.MergeMeshes(_BranchData.GetMeshes()),
+		};
+
+		// Create a new mesh for final output.
+		Mesh finalMesh = MeshUtils.CreateSubMeshes(meshes);
+		finalMesh.name = "Tree_Final";
+
+		_MeshFilter.sharedMesh = finalMesh;
+	}
+
 	public enum TrunkThicknessShape
 	{
 		Circular,
@@ -391,11 +379,13 @@ public class TreeGenerator : SerializedMonoBehaviour
 	private Color _GizmosColour = Color.magenta;
 	[SerializeField, Range(1f, 5f),]
 	private float _GizmosLineWidth = 4f;
+	[SerializeField]
+	private bool _ShowGizmos;
+
 
 	private void OnDrawGizmos()
 	{
-		if (string.IsNullOrEmpty(_CurrentString))
-			return;
+		if (!_ShowGizmos || string.IsNullOrEmpty(_CurrentString)) return;
 
 		var stack = new Stack<TurtleState>();
 		Vector3 renderOffset = Vector3.back;
@@ -457,13 +447,6 @@ public class TreeGenerator : SerializedMonoBehaviour
 				break;
 			}
 		}
-	}
-
-	private void OnValidate()
-	{
-		if (!_MeshFilter || _CurrentString == string.Empty) return;
-
-		Generate();
 	}
 	#endif
 }

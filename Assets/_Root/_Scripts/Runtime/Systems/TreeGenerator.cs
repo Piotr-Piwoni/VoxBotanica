@@ -352,23 +352,49 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 	#if UNITY_EDITOR
 	[SerializeField]
-	private Color _GizmosColour = Color.magenta;
+	private Color _DebugTreeColour = Color.magenta;
+	[SerializeField]
+	private Color _DebugEndPointsColour = new(0.6f, 0.3f, 1f);
 	[SerializeField, Range(1f, 5f),]
 	private float _GizmosLineWidth = 4f;
+	[SerializeField, Range(0.1f, 2f),]
+	private float _GizmosEndPointRadius = 0.45f;
 	[SerializeField]
 	private bool _ShowGizmos;
+	[SerializeField]
+	private bool _ShowTree;
+	[SerializeField]
+	private bool _ShowEndPoints;
 
 
 	private void OnDrawGizmos()
 	{
 		if (!_ShowGizmos || string.IsNullOrEmpty(_LSystem.SententialForm)) return;
 
+		RenderDebugTree();
+		RenderBranchEndPoints();
+	}
+
+	private void RenderBranchEndPoints()
+	{
+		if (!_ShowEndPoints) return;
+		Gizmos.color = _DebugEndPointsColour;
+
+		IEnumerable<Vector3Int> endPoints = _Branches.Select(branch => branch.Last());
+		foreach (Vector3Int point in endPoints)
+			Gizmos.DrawSphere(point, _GizmosEndPointRadius);
+	}
+
+	private void RenderDebugTree()
+	{
+		if (!_ShowTree) return;
+
 		var stack = new Stack<TurtleState>();
 		Vector3 renderOffset = Vector3.back;
 		Vector3 position = Vector3.zero + renderOffset;
 		Vector3 direction = Vector3.up;
 
-		Handles.color = _GizmosColour;
+		Handles.color = _DebugTreeColour;
 
 		foreach (char c in _LSystem.SententialForm)
 		{

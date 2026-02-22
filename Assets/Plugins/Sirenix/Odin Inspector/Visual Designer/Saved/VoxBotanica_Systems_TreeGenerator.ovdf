@@ -33,7 +33,7 @@ Position: $QgrfVrbTpLPrWS66EkXoUg:1
 	VisibleIf = "@_ShowGizmos"
 
 # $EmHf6XtAqfknT6EF91btmr
-Position: $exczd5YHGxXEJuokRQLr5:7
+Position: $exczd5YHGxXEJuokRQLr5:5
 + [Sirenix.OdinInspector.TitleGroupAttribute]
 	GroupName = "Body Settings"
 
@@ -52,10 +52,10 @@ Position: $exczd5YHGxXEJuokRQLr5:3
 	height = 13
 
 # TrunkHeight
-Position: $exczd5YHGxXEJuokRQLr5:5
+Position: $exczd5YHGxXEJuokRQLr5:3
 
 # MaxHeight
-Position: $exczd5YHGxXEJuokRQLr5:6
+Position: $exczd5YHGxXEJuokRQLr5:4
 
 # _CurrentString
 Position: $QgrfVrbTpLPrWS66EkXoUg:2
@@ -79,13 +79,13 @@ Position: $XSCmJ5WuQF7o7fdePSV95a:1
 Position: $QgrfVrbTpLPrWS66EkXoUg:4
 
 # BranchTilt
-Position: $exczd5YHGxXEJuokRQLr5:3
+Position: $exczd5YHGxXEJuokRQLr5:1
 
 # BranchRadialPosition
-Position: $exczd5YHGxXEJuokRQLr5:4
+Position: $exczd5YHGxXEJuokRQLr5:2
 
 # Generate()
-Position: $root:16
+Position: $root:15
 
 # TrunkThickness
 Position: $EmHf6XtAqfknT6EF91btmr:0
@@ -113,3 +113,8 @@ Position: $QgrfVrbTpLPrWS66EkXoUg:4
 
 # _ShowGizmos
 Position: $QgrfVrbTpLPrWS66EkXoUg:0
+
+# _LSystem
+Position: $exczd5YHGxXEJuokRQLr5:0
++ [Sirenix.OdinInspector.InlinePropertyAttribute]
++ [Sirenix.OdinInspector.HideLabelAttribute]

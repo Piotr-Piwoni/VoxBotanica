@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
 using UnityEngine;
 using UnityEngine.Serialization;
 using VoxBotanica.Components;
@@ -18,10 +19,6 @@ using TurtleState = TurtleState<Vector3>;
 public class TreeGenerator : SerializedMonoBehaviour
 {
 	private const int _LENGTH = 1;
-	[OnValueChanged(nameof(Generate))]
-	public string Axiom = "F";
-	[MinValue(1), OnValueChanged(nameof(Generate)),]
-	public int Iterations = 3;
 	[FormerlySerializedAs("AngleXY"), Range(5f, 90f),
 	 OnValueChanged(nameof(Generate)),]
 	public float BranchTilt = 25f;
@@ -37,10 +34,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 	[OnValueChanged(nameof(Generate))]
 	public TrunkThicknessShape TrunkShape = TrunkThicknessShape.Circular;
 
-	[SerializeField, OnValueChanged(nameof(Generate)),]
-	private Dictionary<string, string> _Rules = new() { { "F", "F[+F]F[-F]F" }, };
-	[SerializeField, DisplayAsString,]
-	private string _CurrentString = string.Empty;
+	[OdinSerialize, OnValueChanged(nameof(Generate)),]
+	private LindenmayerSystem _LSystem;
 	[SerializeField, ReadOnly,]
 	private BlockData _TrunkData = new();
 	[SerializeField, ReadOnly,]
@@ -70,13 +65,12 @@ public class TreeGenerator : SerializedMonoBehaviour
 	[Button]
 	public void Clear()
 	{
-		_CurrentString = string.Empty;
+		_LSystem.Clear();
 		_TrunkString = string.Empty;
 		_BranchStrings.Clear();
 		_BranchData.Clear();
 		_TrunkData.Clear();
-		if (_MeshFilter.sharedMesh)
-			_MeshFilter.sharedMesh.Clear();
+		_MeshFilter.sharedMesh?.Clear();
 		_Branches.Clear();
 	}
 
@@ -90,11 +84,11 @@ public class TreeGenerator : SerializedMonoBehaviour
 		}
 
 		Clear();
-		GenerateLSystem();
+		_LSystem.Generate();
 
-		if (string.IsNullOrEmpty(_CurrentString)) return;
+		if (string.IsNullOrEmpty(_LSystem.SententialForm)) return;
 		ParseSystem();
-		GenerateVoxelsFromString();
+		GenerateVoxels();
 		Render();
 	}
 
@@ -170,25 +164,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 		_Branches.Add(branch);
 	}
 
-	private void GenerateLSystem()
-	{
-		string result = Axiom;
-
-		for (var i = 0; i < Iterations; i++)
-		{
-			string newString = result.Aggregate(string.Empty,
-												(current, c) => current +
-													(_Rules.ContainsKey(c.ToString()) ?
-															 _Rules[c.ToString()] :
-															 c.ToString()));
-			result = newString;
-		}
-
-		_CurrentString = result;
-		Debug.Log($"Current String: <color=yellow>{_CurrentString}</color>");
-	}
-
-	private void GenerateVoxelsFromString()
+	private void GenerateVoxels()
 	{
 		if (string.IsNullOrEmpty(_TrunkString))
 			return;
@@ -262,7 +238,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 		var depth = 0;
 		var currentBranch = string.Empty;
 
-		foreach (char c in _CurrentString)
+		foreach (char c in _LSystem.SententialForm)
 		{
 			switch (c)
 			{
@@ -385,7 +361,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 	private void OnDrawGizmos()
 	{
-		if (!_ShowGizmos || string.IsNullOrEmpty(_CurrentString)) return;
+		if (!_ShowGizmos || string.IsNullOrEmpty(_LSystem.SententialForm)) return;
 
 		var stack = new Stack<TurtleState>();
 		Vector3 renderOffset = Vector3.back;
@@ -394,7 +370,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 		Handles.color = _GizmosColour;
 
-		foreach (char c in _CurrentString)
+		foreach (char c in _LSystem.SententialForm)
 		{
 			float height = position.y;
 

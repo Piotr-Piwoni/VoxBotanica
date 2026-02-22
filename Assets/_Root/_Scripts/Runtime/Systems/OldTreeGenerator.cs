@@ -11,7 +11,7 @@ namespace VoxBotanica.Systems
 using TurtleState = TurtleState<Vector3>;
 
 [HideMonoScript]
-public class LSystemGenerator : MonoBehaviour
+public class OldTreeGenerator : MonoBehaviour
 {
 	[Title("L-System Settings")]
 	public string Axiom = "F";

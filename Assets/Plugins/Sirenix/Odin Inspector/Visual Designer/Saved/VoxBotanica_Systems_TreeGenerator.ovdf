@@ -27,12 +27,13 @@ Position: $7ngxqJn9Qej2roRBoZMs1T:1
 	TextColor = "red"
 
 # $XSCmJ5WuQF7o7fdePSV95a
-Position: $QgrfVrbTpLPrWS66EkXoUg:0
+Position: $QgrfVrbTpLPrWS66EkXoUg:1
 + [Sirenix.OdinInspector.FoldoutGroupAttribute]
 	GroupName = "Gizmos Settings"
+	VisibleIf = "@_ShowGizmos"
 
 # $EmHf6XtAqfknT6EF91btmr
-Position: $exczd5YHGxXEJuokRQLr5:7
+Position: $exczd5YHGxXEJuokRQLr5:5
 + [Sirenix.OdinInspector.TitleGroupAttribute]
 	GroupName = "Body Settings"
 
@@ -51,13 +52,13 @@ Position: $exczd5YHGxXEJuokRQLr5:3
 	height = 13
 
 # TrunkHeight
-Position: $exczd5YHGxXEJuokRQLr5:5
+Position: $exczd5YHGxXEJuokRQLr5:3
 
 # MaxHeight
-Position: $exczd5YHGxXEJuokRQLr5:6
+Position: $exczd5YHGxXEJuokRQLr5:4
 
 # _CurrentString
-Position: $QgrfVrbTpLPrWS66EkXoUg:1
+Position: $QgrfVrbTpLPrWS66EkXoUg:2
 * [Sirenix.OdinInspector.DisplayAsStringAttribute]
 	EnableRichText = True
 
@@ -77,14 +78,14 @@ Position: $XSCmJ5WuQF7o7fdePSV95a:1
 # _BodyData
 Position: $QgrfVrbTpLPrWS66EkXoUg:4
 
-# AngleXY
-Position: $exczd5YHGxXEJuokRQLr5:3
+# BranchTilt
+Position: $exczd5YHGxXEJuokRQLr5:1
 
-# AngleXZ
-Position: $exczd5YHGxXEJuokRQLr5:4
+# BranchRadialPosition
+Position: $exczd5YHGxXEJuokRQLr5:2
 
 # Generate()
-Position: $root:17
+Position: $root:15
 
 # TrunkThickness
 Position: $EmHf6XtAqfknT6EF91btmr:0
@@ -94,18 +95,26 @@ Position: $EmHf6XtAqfknT6EF91btmr:1
 + [Sirenix.OdinInspector.EnumToggleButtonsAttribute]
 
 # _TrunkString
-Position: $QgrfVrbTpLPrWS66EkXoUg:2
+Position: $QgrfVrbTpLPrWS66EkXoUg:3
 * [Sirenix.OdinInspector.DisplayAsStringAttribute]
 	Alignment = Left
 
 # _Branches
-Position: $QgrfVrbTpLPrWS66EkXoUg:6
+Position: $QgrfVrbTpLPrWS66EkXoUg:7
 
 # _TrunkData
-Position: $QgrfVrbTpLPrWS66EkXoUg:4
-
-# _BranchData
 Position: $QgrfVrbTpLPrWS66EkXoUg:5
 
+# _BranchData
+Position: $QgrfVrbTpLPrWS66EkXoUg:6
+
 # _BranchStrings
-Position: $QgrfVrbTpLPrWS66EkXoUg:3
+Position: $QgrfVrbTpLPrWS66EkXoUg:4
+
+# _ShowGizmos
+Position: $QgrfVrbTpLPrWS66EkXoUg:0
+
+# _LSystem
+Position: $exczd5YHGxXEJuokRQLr5:0
++ [Sirenix.OdinInspector.InlinePropertyAttribute]
++ [Sirenix.OdinInspector.HideLabelAttribute]

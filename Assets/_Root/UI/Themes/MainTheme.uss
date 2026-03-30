@@ -1,8 +1,8 @@
 :root {
     --border-radius: 10px;
-    --primary-colour: rgb(32, 32, 32);
-    --secondary-colour: rgb(55, 55, 55);
-    --accent-colour: rgb(205, 194, 144);
+    --primary-colour: #202020;
+    --secondary-colour: #373737;
+    --accent-colour: #cdc290;
     --text-colour: aliceblue;
     transition-property: translate;
     transition-duration: 1s;
@@ -16,11 +16,15 @@
     padding: 10px;
 }
 
+.unity-button,
 .unity-base-field {
     -unity-text-generator: advanced;
     -unity-text-auto-size: best-fit 32px 45px;
     margin-top: 5px;
     margin-bottom: 5px;
+    transition-property: background-color;
+    transition-duration: 0.1s;
+    transition-timing-function: ease-in;
 }
 
 .unity-base-field__input {
@@ -61,4 +65,28 @@
     border-color: transparent;
     border-width: 0;
     border-radius: var(--border-radius);
+}
+
+.unity-button:hover {
+    background-color: #333333;
+}
+
+.unity-button:active {
+    background-color: #434343;
+}
+
+#ExportBtn {
+    background-color: var(--secondary-colour);
+    border-color: var(--accent-colour);
+    border-width: 2px;
+    width: 30%;
+    margin-top: 30px;
+}
+
+#ExportBtn:hover {
+    background-color: #474747;
+}
+
+#ExportBtn:active {
+    background-color: #606060;
 }

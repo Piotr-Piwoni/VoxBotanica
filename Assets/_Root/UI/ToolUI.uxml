@@ -10,7 +10,8 @@
             <ui:UnsignedIntegerField label="Trunk Thickness" value="1" name="TrunkThicknessField"/>
             <ui:EnumField label="Trunk Shape" value="Square" type="VoxBotanica.Systems.TreeGenerator+TrunkThicknessShape, Project" name="TrunkShapeField"/>
             <ui:UnsignedIntegerField label="Leaf Radius" value="2" name="LeafRadiusField"/>
+            <ui:Button text="Export" name="ExportBtn" enabled="true" style="align-self: center;"/>
         </ui:GroupBox>
-        <ui:Button text="◀" style="height: 70px; left: 0; top: 0; margin-top: 6px; margin-right: 0; margin-bottom: 0; margin-left: 0; border-bottom-left-radius: 0; border-top-left-radius: 0;"/>
+        <ui:Button text="◀" name="PanelViewBtn" style="height: 70px; left: 0; top: 0; margin-top: 6px; margin-right: 0; margin-bottom: 0; margin-left: 0; border-bottom-left-radius: 0; border-top-left-radius: 0;"/>
     </ui:VisualElement>
 </ui:UXML>

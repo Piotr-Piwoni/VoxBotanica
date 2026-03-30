@@ -18,9 +18,12 @@ public class UIManager : MonoBehaviour
 	private void Start()
 	{
 		var panel = _Root.Q<GroupBox>();
-		var panelButton = _Root.Q<Button>();
+		var panelBtn = _Root.Q<Button>("PanelViewBtn");
+		var exportBtn = _Root.Q<Button>("ExportBtn");
 
-		panelButton.clicked += () =>
+		exportBtn.clicked += () => { Debug.Log("EXPORT!!!"); };
+
+		panelBtn.clicked += () =>
 		{
 			float panelWidth = panel.resolvedStyle.width + 10f;
 
@@ -29,13 +32,13 @@ public class UIManager : MonoBehaviour
 			if (isClosed)
 			{
 				_Root.RemoveFromClassList("closed");
-				panelButton.text = "◀";
+				panelBtn.text = "◀";
 				_Root.style.translate = new Translate(0, 0, 0);
 			}
 			else
 			{
 				_Root.AddToClassList("closed");
-				panelButton.text = "▶";
+				panelBtn.text = "▶";
 				_Root.style.translate = new Translate(-panelWidth, 0, 0);
 			}
 		};

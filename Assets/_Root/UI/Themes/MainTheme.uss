@@ -4,6 +4,9 @@
     --secondary-colour: rgb(55, 55, 55);
     --accent-colour: rgb(205, 194, 144);
     --text-colour: aliceblue;
+    transition-property: translate;
+    transition-duration: 1s;
+    transition-timing-function: ease-out-bounce;
 }
 
 .unity-group-box {
@@ -43,7 +46,6 @@
     border-color: var(--accent-colour);
     border-width: 1px;
     border-radius: var(--border-radius);
-
 }
 
 .unity-base-slider__input .unity-base-field {

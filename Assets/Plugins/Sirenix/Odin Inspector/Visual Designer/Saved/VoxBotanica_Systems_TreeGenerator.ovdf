@@ -97,7 +97,7 @@ Position: $exczd5YHGxXEJuokRQLr5:1
 Position: $exczd5YHGxXEJuokRQLr5:2
 
 # Generate()
-Position: $root:16
+Position: $root:14
 
 # TrunkThickness
 Position: $EmHf6XtAqfknT6EF91btmr:0
@@ -107,7 +107,7 @@ Position: $EmHf6XtAqfknT6EF91btmr:1
 + [Sirenix.OdinInspector.EnumToggleButtonsAttribute]
 
 # _TrunkString
-Position: $QgrfVrbTpLPrWS66EkXoUg:3
+Position: $QgrfVrbTpLPrWS66EkXoUg:2
 * [Sirenix.OdinInspector.DisplayAsStringAttribute]
 	Alignment = Left
 
@@ -115,13 +115,13 @@ Position: $QgrfVrbTpLPrWS66EkXoUg:3
 Position: $QgrfVrbTpLPrWS66EkXoUg:7
 
 # _TrunkData
-Position: $QgrfVrbTpLPrWS66EkXoUg:5
+Position: $QgrfVrbTpLPrWS66EkXoUg:4
 
 # _BranchData
-Position: $QgrfVrbTpLPrWS66EkXoUg:6
+Position: $QgrfVrbTpLPrWS66EkXoUg:5
 
 # _BranchStrings
-Position: $QgrfVrbTpLPrWS66EkXoUg:4
+Position: $QgrfVrbTpLPrWS66EkXoUg:3
 
 # _ShowGizmos
 Position: $QgrfVrbTpLPrWS66EkXoUg:0
@@ -151,3 +151,11 @@ Position: $XdrdkcsKPNfaH99gHP6uHg:1
 
 # _ShowEndPoints
 Position: $XSCmJ5WuQF7o7fdePSV95a:3
+
+# _LeafData
+Position: $QgrfVrbTpLPrWS66EkXoUg:6
+
+# _LeafRadius
+Position: $exczd5YHGxXEJuokRQLr5:6
++ [UnityEngine.SpaceAttribute]
+	height = 13

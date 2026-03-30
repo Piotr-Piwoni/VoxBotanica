@@ -40,12 +40,16 @@ public class TreeGenerator : SerializedMonoBehaviour
 	private BlockData _TrunkData = new();
 	[SerializeField, ReadOnly,]
 	private BlockData _BranchData = new();
+	[SerializeField, ReadOnly,]
+	private BlockData _LeafData = new();
 	[SerializeField]
 	private MeshFilter _MeshFilter;
 	[SerializeField, DisplayAsString,]
 	private string _TrunkString = string.Empty;
 	[SerializeField, ReadOnly,]
 	private List<string> _BranchStrings = new();
+	[SerializeField, OnValueChanged(nameof(Generate)),]
+	private int _LeafRadius = 2;
 
 	private List<List<Vector3Int>> _Branches = new();
 
@@ -70,6 +74,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 		_BranchStrings.Clear();
 		_BranchData.Clear();
 		_TrunkData.Clear();
+		_LeafData.Clear();
 		_MeshFilter.sharedMesh?.Clear();
 		_Branches.Clear();
 	}
@@ -162,6 +167,32 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 		// Add the constructed branch.
 		_Branches.Add(branch);
+	}
+
+	private void GenerateLeaves()
+	{
+		_LeafData.Add(_TrunkData.Positions.Last());
+
+		foreach (Vector3Int center in from branch in _Branches
+									  where branch.Count != 0
+									  select branch.Last())
+			for (int x = -_LeafRadius; x <= _LeafRadius; x++)
+			for (int y = -_LeafRadius; y <= _LeafRadius; y++)
+			for (int z = -_LeafRadius; z <= _LeafRadius; z++)
+			{
+				Vector3Int offset = new(x, y, z);
+				if (offset.sqrMagnitude > _LeafRadius * _LeafRadius) continue;
+
+				Vector3Int leafPos = center + offset;
+
+				if (leafPos.y < TrunkHeight) continue;
+
+				// Avoid overwriting trunk and branch.
+				if (_TrunkData.Contains(leafPos)) continue;
+				if (_BranchData.Contains(leafPos)) continue;
+
+				_LeafData.Add(leafPos);
+			}
 	}
 
 	private void GenerateVoxels()
@@ -329,11 +360,19 @@ public class TreeGenerator : SerializedMonoBehaviour
 		foreach (Vector3 pos in _BranchData.Positions)
 			_BranchData.Add(new Block(pos, _BranchData.Positions, BlockType.Dirt));
 
+		GenerateLeaves();
+
+		_LeafData.ClearBlocks();
+		foreach (Vector3 pos in _LeafData.Positions)
+			_LeafData.Add(new Block(pos, _LeafData.Positions, BlockType.Dirt));
+
+
 		// Merge meshes individually.
 		List<Mesh> meshes = new()
 		{
 				MeshUtils.MergeMeshes(_TrunkData.GetMeshes()),
 				MeshUtils.MergeMeshes(_BranchData.GetMeshes()),
+				MeshUtils.MergeMeshes(_LeafData.GetMeshes()),
 		};
 
 		// Create a new mesh for final output.

@@ -37,6 +37,18 @@ Position: $exczd5YHGxXEJuokRQLr5:5
 + [Sirenix.OdinInspector.TitleGroupAttribute]
 	GroupName = "Body Settings"
 
+# $2YPcb7eHM3iarupHZrDSuz
+Position: $XSCmJ5WuQF7o7fdePSV95a:2
++ [Sirenix.OdinInspector.FoldoutGroupAttribute]
+	GroupName = "Debug Tree Settings"
+	VisibleIf = "@_ShowTree"
+
+# $XdrdkcsKPNfaH99gHP6uHg
+Position: $XSCmJ5WuQF7o7fdePSV95a:4
++ [Sirenix.OdinInspector.FoldoutGroupAttribute]
+	GroupName = "Debug Branch End Points Settings"
+	VisibleIf = "@_ShowEndPoints"
+
 # _Rules
 Position: $exczd5YHGxXEJuokRQLr5:2
 
@@ -73,7 +85,7 @@ Position: $YZzNTS8D8Ft4L8kQM7KTW:0
 + [Sirenix.OdinInspector.SceneObjectsOnlyAttribute]
 
 # _GizmosLineWidth
-Position: $XSCmJ5WuQF7o7fdePSV95a:1
+Position: $XSCmJ5WuQF7o7fdePSV95a:0
 
 # _BodyData
 Position: $QgrfVrbTpLPrWS66EkXoUg:4
@@ -85,7 +97,7 @@ Position: $exczd5YHGxXEJuokRQLr5:1
 Position: $exczd5YHGxXEJuokRQLr5:2
 
 # Generate()
-Position: $root:15
+Position: $root:14
 
 # TrunkThickness
 Position: $EmHf6XtAqfknT6EF91btmr:0
@@ -95,7 +107,7 @@ Position: $EmHf6XtAqfknT6EF91btmr:1
 + [Sirenix.OdinInspector.EnumToggleButtonsAttribute]
 
 # _TrunkString
-Position: $QgrfVrbTpLPrWS66EkXoUg:3
+Position: $QgrfVrbTpLPrWS66EkXoUg:2
 * [Sirenix.OdinInspector.DisplayAsStringAttribute]
 	Alignment = Left
 
@@ -103,13 +115,13 @@ Position: $QgrfVrbTpLPrWS66EkXoUg:3
 Position: $QgrfVrbTpLPrWS66EkXoUg:7
 
 # _TrunkData
-Position: $QgrfVrbTpLPrWS66EkXoUg:5
+Position: $QgrfVrbTpLPrWS66EkXoUg:4
 
 # _BranchData
-Position: $QgrfVrbTpLPrWS66EkXoUg:6
+Position: $QgrfVrbTpLPrWS66EkXoUg:5
 
 # _BranchStrings
-Position: $QgrfVrbTpLPrWS66EkXoUg:4
+Position: $QgrfVrbTpLPrWS66EkXoUg:3
 
 # _ShowGizmos
 Position: $QgrfVrbTpLPrWS66EkXoUg:0
@@ -118,3 +130,32 @@ Position: $QgrfVrbTpLPrWS66EkXoUg:0
 Position: $exczd5YHGxXEJuokRQLr5:0
 + [Sirenix.OdinInspector.InlinePropertyAttribute]
 + [Sirenix.OdinInspector.HideLabelAttribute]
+
+# _ShowTree
+Position: $XSCmJ5WuQF7o7fdePSV95a:1
+
+# _DebugTreeColour
+Position: $2YPcb7eHM3iarupHZrDSuz:0
++ [Sirenix.OdinInspector.LabelWidthAttribute]
+	Width = 160
+
+# _DebugEndPointsColour
+Position: $XdrdkcsKPNfaH99gHP6uHg:0
++ [Sirenix.OdinInspector.LabelWidthAttribute]
+	Width = 160
+
+# _GizmosEndPointRadius
+Position: $XdrdkcsKPNfaH99gHP6uHg:1
++ [Sirenix.OdinInspector.LabelWidthAttribute]
+	Width = 160
+
+# _ShowEndPoints
+Position: $XSCmJ5WuQF7o7fdePSV95a:3
+
+# _LeafData
+Position: $QgrfVrbTpLPrWS66EkXoUg:6
+
+# _LeafRadius
+Position: $exczd5YHGxXEJuokRQLr5:6
++ [UnityEngine.SpaceAttribute]
+	height = 13

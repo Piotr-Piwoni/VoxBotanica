@@ -1,1 +1,62 @@
-VisualElement {}
+:root {
+    --border-radius: 10px;
+    --primary-colour: rgb(32, 32, 32);
+    --secondary-colour: rgb(55, 55, 55);
+    --accent-colour: rgb(205, 194, 144);
+    --text-colour: aliceblue;
+}
+
+.unity-group-box {
+    color: var(--text-colour);
+    background-color: var(--primary-colour);
+    border-radius: var(--border-radius);
+    padding: 10px;
+}
+
+.unity-base-field {
+    -unity-text-generator: advanced;
+    -unity-text-auto-size: best-fit 32px 45px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.unity-base-field__input {
+    margin-left: 20px;
+    border-radius: var(--border-radius);
+    background-color: var(--secondary-colour);
+    color: var(--accent-colour);
+    border-color: var(--accent-colour);
+    border-width: 1px;
+}
+
+.unity-base-slider__input {
+    background-color: transparent;
+    border-color: transparent;
+    border-width: 0;
+    justify-content: space-evenly;
+}
+
+.unity-base-slider__drag-container {
+    flex-shrink: 1;
+    width: 100px;
+    background-color: var(--secondary-colour);
+    border-color: var(--accent-colour);
+    border-width: 1px;
+    border-radius: var(--border-radius);
+
+}
+
+.unity-base-slider__input .unity-base-field {
+    margin: 0;
+    flex-grow: 1;
+    flex-shrink: 1;
+    width: 1%;
+}
+
+.unity-button {
+    color: var(--text-colour);
+    background-color: var(--primary-colour);
+    border-color: transparent;
+    border-width: 0;
+    border-radius: var(--border-radius);
+}

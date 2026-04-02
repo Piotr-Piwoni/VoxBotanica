@@ -49,6 +49,11 @@ Position: $XSCmJ5WuQF7o7fdePSV95a:4
 	GroupName = "Debug Branch End Points Settings"
 	VisibleIf = "@_ShowEndPoints"
 
+# $DuwGv5LBQnJB4xMt4yuXXe
+Position: $exczd5YHGxXEJuokRQLr5:6
++ [Sirenix.OdinInspector.FoldoutGroupAttribute]
+	GroupName = "Leaves Settings"
+
 # _Rules
 Position: $exczd5YHGxXEJuokRQLr5:2
 
@@ -101,7 +106,7 @@ Position: $exczd5YHGxXEJuokRQLr5:1
 Position: $exczd5YHGxXEJuokRQLr5:2
 
 # Generate()
-Position: $root:10
+Position: $root:8
 
 # TrunkThickness
 Position: $EmHf6XtAqfknT6EF91btmr:0
@@ -166,11 +171,9 @@ Position: $XSCmJ5WuQF7o7fdePSV95a:3
 Position: $QgrfVrbTpLPrWS66EkXoUg:9
 
 # _LeafRadius
-Position: $exczd5YHGxXEJuokRQLr5:6
+Position: $DuwGv5LBQnJB4xMt4yuXXe:0
 + [UnityEngine.SpaceAttribute]
 	height = 5
-* [Sirenix.OdinInspector.OnValueChangedAttribute]
-	InvokeOnUndoRedo = False
 
 # _Renderer
 Position: $QgrfVrbTpLPrWS66EkXoUg:3
@@ -185,3 +188,9 @@ Position: $exczd5YHGxXEJuokRQLr5:7
 
 # _LeafColour
 Position: $exczd5YHGxXEJuokRQLr5:8
+
+# _TrunkLeafRadius
+Position: $DuwGv5LBQnJB4xMt4yuXXe:1
+
+# _BranchesLeafRadii
+Position: $DuwGv5LBQnJB4xMt4yuXXe:2

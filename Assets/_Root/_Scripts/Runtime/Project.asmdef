@@ -3,7 +3,9 @@
     "rootNamespace": "VoxBotanica",
     "references": [
         "GUID:d525ad6bd40672747bde77962f1c401e",
-        "GUID:75469ad4d38634e559750d17036d5f7c"
+        "GUID:75469ad4d38634e559750d17036d5f7c",
+        "GUID:77fc2e1f5a4f24efab94081ad67fcb20",
+        "GUID:2b82e46c4ca0a4eb697ab8ccdfb39af1"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

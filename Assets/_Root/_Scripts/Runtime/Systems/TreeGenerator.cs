@@ -2,11 +2,13 @@
 using System.Linq;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
+using Sirenix.Utilities;
 using UnityEngine;
 using UnityEngine.Serialization;
 using VoxBotanica.Components;
 using VoxBotanica.Types;
 using VoxBotanica.Utilities;
+using Random = UnityEngine.Random;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -42,14 +44,22 @@ public class TreeGenerator : SerializedMonoBehaviour
 	private BlockData _BranchData = new();
 	[SerializeField, ReadOnly,]
 	private BlockData _LeafData = new();
-	[SerializeField]
+	[SerializeField, ReadOnly,]
 	private MeshFilter _MeshFilter;
+	[SerializeField, ReadOnly,]
+	private MeshRenderer _Renderer;
 	[SerializeField, DisplayAsString,]
 	private string _TrunkString = string.Empty;
 	[SerializeField, ReadOnly,]
 	private List<string> _BranchStrings = new();
 	[SerializeField, OnValueChanged(nameof(Generate)),]
 	private int _LeafRadius = 2;
+	[SerializeField, ColorUsage(true, true),]
+	private Color _TrunkColour = Color.saddleBrown;
+	[SerializeField, ColorUsage(true, true),]
+	private Color _LeafColour = Color.oliveDrab;
+	[SerializeField, ReadOnly,]
+	private Shader _ShaderResource;
 
 	private List<List<Vector3Int>> _Branches = new();
 
@@ -57,7 +67,9 @@ public class TreeGenerator : SerializedMonoBehaviour
 	private void Awake()
 	{
 		_MeshFilter = GetComponent<MeshFilter>();
+		_Renderer = GetComponent<MeshRenderer>();
 		_BranchStrings.Capacity = 10;
+		_ShaderResource = Resources.Load<Material>("Lit").shader;
 	}
 
 	private void Start()
@@ -65,6 +77,18 @@ public class TreeGenerator : SerializedMonoBehaviour
 		Clear();
 		Generate();
 	}
+
+	private void Update()
+	{
+		if (_Renderer.sharedMaterials.IsNullOrEmpty()) return;
+
+		Material[] materials = _Renderer.sharedMaterials;
+		materials[0].color = _TrunkColour; //< Trunk.
+		materials[1].color = _TrunkColour; //< Branches.
+		materials[2].color = _LeafColour;  //< Leaves.
+		_Renderer.sharedMaterials = materials;
+	}
+
 
 	[Button]
 	public void Clear()
@@ -380,6 +404,21 @@ public class TreeGenerator : SerializedMonoBehaviour
 		finalMesh.name = "Tree_Final";
 
 		_MeshFilter.sharedMesh = finalMesh;
+
+		// Add materials based on the order of the submeshes.
+		if (!_Renderer.sharedMaterials.IsNullOrEmpty()) return;
+		var trunkMaterial = new Material(_ShaderResource);
+		var leafMaterial = new Material(_ShaderResource);
+
+		trunkMaterial.color = _TrunkColour;
+		leafMaterial.color = _LeafColour;
+
+		_Renderer.sharedMaterials = new[]
+		{
+				trunkMaterial, //< Trunk Mesh.
+				trunkMaterial, //< Branches Mesh.
+				leafMaterial,  //< Leaves Mesh.
+		};
 	}
 
 	public enum TrunkThicknessShape

@@ -31,7 +31,7 @@ public class ModelExporter : MonoBehaviour
 
 
 	[Button]
-	private void Export()
+	public void Export()
 	{
 		var fileName = $"{_ExportObject.name.ToTitleCase()}.fbx";
 		string filePath = Path.Combine(ExportFolderPath, fileName);

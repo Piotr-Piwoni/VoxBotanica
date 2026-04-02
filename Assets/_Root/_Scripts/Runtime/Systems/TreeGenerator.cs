@@ -118,6 +118,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 		if (string.IsNullOrEmpty(_LSystem.SententialForm)) return;
 		ParseSystem();
 		GenerateVoxels();
+		UpdateVoxelData();
+		GenerateLeaves();
 		Render();
 	}
 
@@ -217,6 +219,10 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 				_LeafData.Add(leafPos);
 			}
+
+		_LeafData.ClearBlocks();
+		foreach (Vector3 pos in _LeafData.Positions)
+			_LeafData.Add(new Block(pos, _LeafData.Positions, BlockType.Dirt));
 	}
 
 	private void GenerateVoxels()
@@ -331,6 +337,38 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 	private void Render()
 	{
+		// Merge meshes individually.
+		List<Mesh> meshes = new()
+		{
+				MeshUtils.MergeMeshes(_TrunkData.GetMeshes()),
+				MeshUtils.MergeMeshes(_BranchData.GetMeshes()),
+				MeshUtils.MergeMeshes(_LeafData.GetMeshes()),
+		};
+
+		// Create a new mesh for final output.
+		Mesh finalMesh = MeshUtils.CreateSubMeshes(meshes);
+		finalMesh.name = "Tree_Final";
+
+		_MeshFilter.sharedMesh = finalMesh;
+
+		// Add materials based on the order of the submeshes.
+		if (!_Renderer.sharedMaterials.IsNullOrEmpty()) return;
+		var trunkMaterial = new Material(_ShaderResource);
+		var leafMaterial = new Material(_ShaderResource);
+
+		trunkMaterial.color = _TrunkColour;
+		leafMaterial.color = _LeafColour;
+
+		_Renderer.sharedMaterials = new[]
+		{
+				trunkMaterial, //< Trunk Mesh.
+				trunkMaterial, //< Branches Mesh.
+				leafMaterial,  //< Leaves Mesh.
+		};
+	}
+
+	private void UpdateVoxelData()
+	{
 		// Offset the branches based on the trunk thickness.
 		foreach (List<Vector3Int> branch in _Branches)
 		{
@@ -383,42 +421,6 @@ public class TreeGenerator : SerializedMonoBehaviour
 		_BranchData.ClearBlocks(); //< Update visuals.
 		foreach (Vector3 pos in _BranchData.Positions)
 			_BranchData.Add(new Block(pos, _BranchData.Positions, BlockType.Dirt));
-
-		GenerateLeaves();
-
-		_LeafData.ClearBlocks();
-		foreach (Vector3 pos in _LeafData.Positions)
-			_LeafData.Add(new Block(pos, _LeafData.Positions, BlockType.Dirt));
-
-
-		// Merge meshes individually.
-		List<Mesh> meshes = new()
-		{
-				MeshUtils.MergeMeshes(_TrunkData.GetMeshes()),
-				MeshUtils.MergeMeshes(_BranchData.GetMeshes()),
-				MeshUtils.MergeMeshes(_LeafData.GetMeshes()),
-		};
-
-		// Create a new mesh for final output.
-		Mesh finalMesh = MeshUtils.CreateSubMeshes(meshes);
-		finalMesh.name = "Tree_Final";
-
-		_MeshFilter.sharedMesh = finalMesh;
-
-		// Add materials based on the order of the submeshes.
-		if (!_Renderer.sharedMaterials.IsNullOrEmpty()) return;
-		var trunkMaterial = new Material(_ShaderResource);
-		var leafMaterial = new Material(_ShaderResource);
-
-		trunkMaterial.color = _TrunkColour;
-		leafMaterial.color = _LeafColour;
-
-		_Renderer.sharedMaterials = new[]
-		{
-				trunkMaterial, //< Trunk Mesh.
-				trunkMaterial, //< Branches Mesh.
-				leafMaterial,  //< Leaves Mesh.
-		};
 	}
 
 	public enum TrunkThicknessShape

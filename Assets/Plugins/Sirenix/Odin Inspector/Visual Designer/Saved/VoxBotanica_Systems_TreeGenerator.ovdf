@@ -3,7 +3,7 @@ VoxBotanica.Systems.TreeGenerator, Project
 MetaGuid:271c469217e84182aae1a5283cf6281a
 
 # $exczd5YHGxXEJuokRQLr5
-Position: $YZzNTS8D8Ft4L8kQM7KTW:1
+Position: $YZzNTS8D8Ft4L8kQM7KTW:0
 + [Sirenix.OdinInspector.TitleGroupAttribute]
 	GroupName = "L-System Settings"
 
@@ -65,9 +65,13 @@ Position: $exczd5YHGxXEJuokRQLr5:3
 
 # TrunkHeight
 Position: $exczd5YHGxXEJuokRQLr5:3
+* [Sirenix.OdinInspector.OnValueChangedAttribute]
+	InvokeOnUndoRedo = False
 
 # MaxHeight
 Position: $exczd5YHGxXEJuokRQLr5:4
+* [Sirenix.OdinInspector.OnValueChangedAttribute]
+	InvokeOnUndoRedo = False
 
 # _CurrentString
 Position: $QgrfVrbTpLPrWS66EkXoUg:2
@@ -81,7 +85,7 @@ Position: $XSCmJ5WuQF7o7fdePSV95a:0
 Position: $QgrfVrbTpLPrWS66EkXoUg:2
 
 # _MeshFilter
-Position: $YZzNTS8D8Ft4L8kQM7KTW:0
+Position: $QgrfVrbTpLPrWS66EkXoUg:2
 + [Sirenix.OdinInspector.SceneObjectsOnlyAttribute]
 
 # _GizmosLineWidth
@@ -97,31 +101,35 @@ Position: $exczd5YHGxXEJuokRQLr5:1
 Position: $exczd5YHGxXEJuokRQLr5:2
 
 # Generate()
-Position: $root:14
+Position: $root:10
 
 # TrunkThickness
 Position: $EmHf6XtAqfknT6EF91btmr:0
+* [Sirenix.OdinInspector.OnValueChangedAttribute]
+	InvokeOnUndoRedo = False
 
 # TrunkShape
 Position: $EmHf6XtAqfknT6EF91btmr:1
 + [Sirenix.OdinInspector.EnumToggleButtonsAttribute]
+* [Sirenix.OdinInspector.OnValueChangedAttribute]
+	InvokeOnUndoRedo = False
 
 # _TrunkString
-Position: $QgrfVrbTpLPrWS66EkXoUg:2
+Position: $QgrfVrbTpLPrWS66EkXoUg:5
 * [Sirenix.OdinInspector.DisplayAsStringAttribute]
 	Alignment = Left
 
 # _Branches
-Position: $QgrfVrbTpLPrWS66EkXoUg:7
+Position: $QgrfVrbTpLPrWS66EkXoUg:10
 
 # _TrunkData
-Position: $QgrfVrbTpLPrWS66EkXoUg:4
+Position: $QgrfVrbTpLPrWS66EkXoUg:7
 
 # _BranchData
-Position: $QgrfVrbTpLPrWS66EkXoUg:5
+Position: $QgrfVrbTpLPrWS66EkXoUg:8
 
 # _BranchStrings
-Position: $QgrfVrbTpLPrWS66EkXoUg:3
+Position: $QgrfVrbTpLPrWS66EkXoUg:6
 
 # _ShowGizmos
 Position: $QgrfVrbTpLPrWS66EkXoUg:0
@@ -130,6 +138,8 @@ Position: $QgrfVrbTpLPrWS66EkXoUg:0
 Position: $exczd5YHGxXEJuokRQLr5:0
 + [Sirenix.OdinInspector.InlinePropertyAttribute]
 + [Sirenix.OdinInspector.HideLabelAttribute]
+* [Sirenix.OdinInspector.OnValueChangedAttribute]
+	InvokeOnUndoRedo = False
 
 # _ShowTree
 Position: $XSCmJ5WuQF7o7fdePSV95a:1
@@ -153,9 +163,25 @@ Position: $XdrdkcsKPNfaH99gHP6uHg:1
 Position: $XSCmJ5WuQF7o7fdePSV95a:3
 
 # _LeafData
-Position: $QgrfVrbTpLPrWS66EkXoUg:6
+Position: $QgrfVrbTpLPrWS66EkXoUg:9
 
 # _LeafRadius
 Position: $exczd5YHGxXEJuokRQLr5:6
 + [UnityEngine.SpaceAttribute]
-	height = 13
+	height = 5
+* [Sirenix.OdinInspector.OnValueChangedAttribute]
+	InvokeOnUndoRedo = False
+
+# _Renderer
+Position: $QgrfVrbTpLPrWS66EkXoUg:3
+
+# _ShaderResource
+Position: $QgrfVrbTpLPrWS66EkXoUg:4
+
+# _TrunkColour
+Position: $exczd5YHGxXEJuokRQLr5:7
++ [UnityEngine.SpaceAttribute]
+	height = 5
+
+# _LeafColour
+Position: $exczd5YHGxXEJuokRQLr5:8

@@ -195,30 +195,39 @@ public class TreeGenerator : SerializedMonoBehaviour
 		_Branches.Add(branch);
 	}
 
+	private void GenerateCluster(Vector3Int center)
+	{
+		for (int x = -_LeafRadius; x <= _LeafRadius; x++)
+		for (int y = -_LeafRadius; y <= _LeafRadius; y++)
+		for (int z = -_LeafRadius; z <= _LeafRadius; z++)
+		{
+			Vector3Int offset = new(x, y, z);
+			if (offset.sqrMagnitude > _LeafRadius * _LeafRadius) continue;
+
+			Vector3Int leafPos = center + offset;
+
+			if (leafPos.y < TrunkHeight) continue;
+
+			// Avoid overwriting trunk and branch.
+			if (_TrunkData.Contains(leafPos)) continue;
+			if (_BranchData.Contains(leafPos)) continue;
+
+			_LeafData.Add(leafPos);
+		}
+	}
+
 	private void GenerateLeaves()
 	{
-		_LeafData.Add(_TrunkData.Positions.Last());
+		int maxY = _TrunkData.Positions.Last().y;
+		foreach (Vector3Int position in _TrunkData.Positions
+												  .Where(position => position.y == maxY))
+			GenerateCluster(position);
+
 
 		foreach (Vector3Int center in from branch in _Branches
 									  where branch.Count != 0
 									  select branch.Last())
-			for (int x = -_LeafRadius; x <= _LeafRadius; x++)
-			for (int y = -_LeafRadius; y <= _LeafRadius; y++)
-			for (int z = -_LeafRadius; z <= _LeafRadius; z++)
-			{
-				Vector3Int offset = new(x, y, z);
-				if (offset.sqrMagnitude > _LeafRadius * _LeafRadius) continue;
-
-				Vector3Int leafPos = center + offset;
-
-				if (leafPos.y < TrunkHeight) continue;
-
-				// Avoid overwriting trunk and branch.
-				if (_TrunkData.Contains(leafPos)) continue;
-				if (_BranchData.Contains(leafPos)) continue;
-
-				_LeafData.Add(leafPos);
-			}
+			GenerateCluster(center);
 
 		_LeafData.ClearBlocks();
 		foreach (Vector3 pos in _LeafData.Positions)

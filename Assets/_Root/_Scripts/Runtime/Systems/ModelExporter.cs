@@ -10,8 +10,7 @@ public class ModelExporter : MonoBehaviour
 {
 	private static readonly int _BaseColor = Shader.PropertyToID("_BaseColor");
 
-	[SerializeField]
-	private string _ExportFolderPath =
+	public string ExportFolderPath =
 			@"W:\Projects\Engines\Unity\Abertay\[CMP400] - Honours Project\VoxBotanica\Assets\_Root\Exports";
 	[SerializeField]
 	private GameObject _ExportObject;
@@ -35,7 +34,7 @@ public class ModelExporter : MonoBehaviour
 	private void Export()
 	{
 		var fileName = $"{_ExportObject.name.ToTitleCase()}.fbx";
-		string filePath = Path.Combine(_ExportFolderPath, fileName);
+		string filePath = Path.Combine(ExportFolderPath, fileName);
 
 		var meshFilter = _ExportObject.GetComponent<MeshFilter>();
 		var meshRenderer = _ExportObject.GetComponent<MeshRenderer>();

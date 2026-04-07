@@ -2,11 +2,13 @@
 using System.Linq;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
+using Sirenix.Utilities;
 using UnityEngine;
 using UnityEngine.Serialization;
 using VoxBotanica.Components;
 using VoxBotanica.Types;
 using VoxBotanica.Utilities;
+using Random = UnityEngine.Random;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -42,22 +44,42 @@ public class TreeGenerator : SerializedMonoBehaviour
 	private BlockData _BranchData = new();
 	[SerializeField, ReadOnly,]
 	private BlockData _LeafData = new();
-	[SerializeField]
+	[SerializeField, ReadOnly,]
 	private MeshFilter _MeshFilter;
+	[SerializeField, ReadOnly,]
+	private MeshRenderer _Renderer;
 	[SerializeField, DisplayAsString,]
 	private string _TrunkString = string.Empty;
 	[SerializeField, ReadOnly,]
 	private List<string> _BranchStrings = new();
-	[SerializeField, OnValueChanged(nameof(Generate)),]
+	[SerializeField, MinValue(0),]
 	private int _LeafRadius = 2;
+	[SerializeField, MinValue(0),]
+	private int _TrunkLeafRadius = 2;
+	[OdinSerialize, MinValue(0),]
+	private List<int> _BranchesLeafRadii = new();
+	[SerializeField, ColorUsage(true, true),]
+	private Color _TrunkColour = Color.saddleBrown;
+	[SerializeField, ColorUsage(true, true),]
+	private Color _LeafColour = Color.oliveDrab;
+	[SerializeField, ReadOnly,]
+	private Shader _ShaderResource;
 
 	private List<List<Vector3Int>> _Branches = new();
+	private int _OldLeafRadius;
+	private int _OldTrunkLeafRadius;
+	private List<int> _OldBranchesLeafRadii = new();
 
 
 	private void Awake()
 	{
-		_MeshFilter = GetComponent<MeshFilter>();
 		_BranchStrings.Capacity = 10;
+		_MeshFilter = GetComponent<MeshFilter>();
+		_Renderer = GetComponent<MeshRenderer>();
+		_ShaderResource = Resources.Load<Material>("Lit").shader;
+		_OldLeafRadius = _LeafRadius;
+		_TrunkLeafRadius = _LeafRadius;
+		_OldTrunkLeafRadius = _TrunkLeafRadius;
 	}
 
 	private void Start()
@@ -65,6 +87,21 @@ public class TreeGenerator : SerializedMonoBehaviour
 		Clear();
 		Generate();
 	}
+
+	private void Update()
+	{
+		if (!_Renderer.sharedMaterials.IsNullOrEmpty())
+		{
+			Material[] materials = _Renderer.sharedMaterials;
+			materials[0].color = _TrunkColour; //< Trunk.
+			materials[1].color = _TrunkColour; //< Branches.
+			materials[2].color = _LeafColour;  //< Leaves.
+			_Renderer.sharedMaterials = materials;
+		}
+
+		UpdateLeafGeneration();
+	}
+
 
 	[Button]
 	public void Clear()
@@ -77,6 +114,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 		_LeafData.Clear();
 		_MeshFilter.sharedMesh?.Clear();
 		_Branches.Clear();
+		_BranchesLeafRadii.Clear();
+		_OldBranchesLeafRadii.Clear();
 	}
 
 	[Button]
@@ -94,6 +133,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 		if (string.IsNullOrEmpty(_LSystem.SententialForm)) return;
 		ParseSystem();
 		GenerateVoxels();
+		UpdateVoxelData();
+		GenerateLeaves();
 		Render();
 	}
 
@@ -167,32 +208,55 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 		// Add the constructed branch.
 		_Branches.Add(branch);
+		// Add a leaf radius value for this branch.
+		_BranchesLeafRadii.Add(_LeafRadius);
+	}
+
+	private void GenerateCluster(Vector3Int center, int radius)
+	{
+		for (int x = -radius; x <= radius; x++)
+		for (int y = -radius; y <= radius; y++)
+		for (int z = -radius; z <= radius; z++)
+		{
+			Vector3Int offset = new(x, y, z);
+			if (offset.sqrMagnitude > radius * radius) continue;
+
+			Vector3Int leafPos = center + offset;
+
+			if (leafPos.y < TrunkHeight) continue;
+
+			// Avoid overwriting trunk and branch.
+			if (_TrunkData.Contains(leafPos)) continue;
+			if (_BranchData.Contains(leafPos)) continue;
+
+			_LeafData.Add(leafPos);
+		}
 	}
 
 	private void GenerateLeaves()
 	{
-		_LeafData.Add(_TrunkData.Positions.Last());
+		_LeafData.Clear();
 
-		foreach (Vector3Int center in from branch in _Branches
-									  where branch.Count != 0
-									  select branch.Last())
-			for (int x = -_LeafRadius; x <= _LeafRadius; x++)
-			for (int y = -_LeafRadius; y <= _LeafRadius; y++)
-			for (int z = -_LeafRadius; z <= _LeafRadius; z++)
-			{
-				Vector3Int offset = new(x, y, z);
-				if (offset.sqrMagnitude > _LeafRadius * _LeafRadius) continue;
+		int maxY = _TrunkData.Positions.Last().y;
+		foreach (Vector3Int position in _TrunkData.Positions
+												  .Where(position => position.y == maxY))
+			GenerateCluster(position, _TrunkLeafRadius);
 
-				Vector3Int leafPos = center + offset;
 
-				if (leafPos.y < TrunkHeight) continue;
+		for (var i = 0; i < _Branches.Count; i++)
+		{
+			List<Vector3Int> branch = _Branches[i];
+			if (branch.IsNullOrEmpty()) continue;
+			GenerateCluster(branch.Last(), _BranchesLeafRadii[i]);
+		}
 
-				// Avoid overwriting trunk and branch.
-				if (_TrunkData.Contains(leafPos)) continue;
-				if (_BranchData.Contains(leafPos)) continue;
+		foreach (Vector3 pos in _LeafData.Positions)
+			_LeafData.Add(new Block(pos, _LeafData.Positions, BlockType.Dirt));
 
-				_LeafData.Add(leafPos);
-			}
+		// Create a tracking list if it doesn't already exist or the size is outdated.
+		if (_OldBranchesLeafRadii.IsNullOrEmpty() ||
+			_OldBranchesLeafRadii.Count != _BranchesLeafRadii.Count)
+			_OldBranchesLeafRadii = new List<int>(_BranchesLeafRadii);
 	}
 
 	private void GenerateVoxels()
@@ -307,6 +371,84 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 	private void Render()
 	{
+		_MeshFilter.sharedMesh.Clear();
+
+		// Merge meshes individually.
+		List<Mesh> meshes = new()
+		{
+				MeshUtils.MergeMeshes(_TrunkData.GetMeshes()),
+				MeshUtils.MergeMeshes(_BranchData.GetMeshes()),
+				MeshUtils.MergeMeshes(_LeafData.GetMeshes()),
+		};
+
+		// Create a new mesh for final output.
+		Mesh finalMesh = MeshUtils.CreateSubMeshes(meshes);
+		finalMesh.name = "Tree_Final";
+
+		_MeshFilter.sharedMesh = finalMesh;
+
+		// Add materials based on the order of the submeshes.
+		if (!_Renderer.sharedMaterials.IsNullOrEmpty()) return;
+		var trunkMaterial = new Material(_ShaderResource);
+		var leafMaterial = new Material(_ShaderResource);
+
+		trunkMaterial.color = _TrunkColour;
+		leafMaterial.color = _LeafColour;
+
+		_Renderer.sharedMaterials = new[]
+		{
+				trunkMaterial, //< Trunk Mesh.
+				trunkMaterial, //< Branches Mesh.
+				leafMaterial,  //< Leaves Mesh.
+		};
+	}
+
+	private void UpdateLeafGeneration()
+	{
+		var hasChanged = false;
+
+		int count = Mathf.Min(_BranchesLeafRadii.Count, _OldBranchesLeafRadii.Count);
+		for (var i = 0; i < count; i++)
+		{
+			int clamped = Mathf.Clamp(_BranchesLeafRadii[i], 0, int.MaxValue);
+			if (clamped == _OldBranchesLeafRadii[i]) continue;
+
+			_BranchesLeafRadii[i] = clamped;
+			_OldBranchesLeafRadii[i] = clamped;
+
+			hasChanged = true;
+		}
+
+		if (_OldTrunkLeafRadius != _TrunkLeafRadius)
+		{
+			_TrunkLeafRadius = Mathf.Clamp(_TrunkLeafRadius, 0, int.MaxValue);
+			_OldTrunkLeafRadius = _TrunkLeafRadius;
+			hasChanged = true;
+		}
+
+		if (_LeafRadius != _OldLeafRadius)
+		{
+			_LeafRadius = Mathf.Clamp(_LeafRadius, 0, int.MaxValue);
+			_OldLeafRadius = _LeafRadius;
+
+			// Update Trunk Leaf Radius.
+			_TrunkLeafRadius = _LeafRadius;
+			_OldTrunkLeafRadius = _TrunkLeafRadius;
+
+			// Update individual branch leaf radii.
+			for (var i = 0; i < _BranchesLeafRadii.Count; i++)
+				_BranchesLeafRadii[i] = _LeafRadius;
+
+			hasChanged = true;
+		}
+
+		if (!hasChanged) return;
+		GenerateLeaves();
+		Render();
+	}
+
+	private void UpdateVoxelData()
+	{
 		// Offset the branches based on the trunk thickness.
 		foreach (List<Vector3Int> branch in _Branches)
 		{
@@ -359,27 +501,6 @@ public class TreeGenerator : SerializedMonoBehaviour
 		_BranchData.ClearBlocks(); //< Update visuals.
 		foreach (Vector3 pos in _BranchData.Positions)
 			_BranchData.Add(new Block(pos, _BranchData.Positions, BlockType.Dirt));
-
-		GenerateLeaves();
-
-		_LeafData.ClearBlocks();
-		foreach (Vector3 pos in _LeafData.Positions)
-			_LeafData.Add(new Block(pos, _LeafData.Positions, BlockType.Dirt));
-
-
-		// Merge meshes individually.
-		List<Mesh> meshes = new()
-		{
-				MeshUtils.MergeMeshes(_TrunkData.GetMeshes()),
-				MeshUtils.MergeMeshes(_BranchData.GetMeshes()),
-				MeshUtils.MergeMeshes(_LeafData.GetMeshes()),
-		};
-
-		// Create a new mesh for final output.
-		Mesh finalMesh = MeshUtils.CreateSubMeshes(meshes);
-		finalMesh.name = "Tree_Final";
-
-		_MeshFilter.sharedMesh = finalMesh;
 	}
 
 	public enum TrunkThicknessShape

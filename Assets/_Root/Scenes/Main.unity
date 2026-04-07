@@ -659,7 +659,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1163995788}
-  m_Mesh: {fileID: 2097818161}
+  m_Mesh: {fileID: 495800796}
 --- !u!114 &1163995792
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -682,7 +682,7 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _Position: {x: 0, y: 0, z: 0}
-  _ChunkSize: {x: 3, y: 3, z: 3}
+  _ChunkSize: {x: 3, y: 2, z: 3}
   _MeshFilter: {fileID: 1163995791}
   _Renderer: {fileID: 0}
 --- !u!1 &1226605922
@@ -922,6 +922,9 @@ MonoBehaviour:
   - '[+F]'
   - '[-F]'
   _LeafRadius: 2
+  _TrunkColour: {r: 1.0592738, g: 0.51577204, b: 0.11091872, a: 1}
+  _LeafColour: {r: 0.4196079, g: 0.5568628, b: 0.1372549, a: 1}
+  _ShaderResource: {fileID: 0}
   _DebugTreeColour: {r: 1, g: 0, b: 1, a: 1}
   _DebugEndPointsColour: {r: 0, g: 0, b: 1, a: 1}
   _GizmosLineWidth: 4
@@ -953,10 +956,7 @@ MeshRenderer:
   m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 589b8f1b91bb9e34c975845fbeb5de00, type: 2}
-  - {fileID: 2100000, guid: e61b6604548d7004a8fe89e5db8cb0a5, type: 2}
-  - {fileID: 2100000, guid: d9fc93e0ce35ef147bebb9766a147198, type: 2}
+  m_Materials: []
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1439,3 +1439,4 @@ SceneRoots:
   - {fileID: 1163995789}
   - {fileID: 82610245}
   - {fileID: 1507294358}
+  - {fileID: 1461007324}

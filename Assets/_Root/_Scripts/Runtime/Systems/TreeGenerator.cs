@@ -112,7 +112,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 		_BranchData.Clear();
 		_TrunkData.Clear();
 		_LeafData.Clear();
-		_MeshFilter.sharedMesh?.Clear();
+		if (_MeshFilter) _MeshFilter.sharedMesh.Clear();
 		_Branches.Clear();
 		_BranchesLeafRadii.Clear();
 		_OldBranchesLeafRadii.Clear();

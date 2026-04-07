@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Game.UI;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace VoxBotanica.Systems
@@ -42,6 +43,12 @@ public class UIManager : MonoBehaviour
 				_Root.style.translate = new Translate(-panelWidth, 0, 0);
 			}
 		};
+
+		var colourPopup = _Root.Q<ColorPopup>();
+		var trunkColourFiled = _Root.Q<ColorField>("TrunkColour");
+		trunkColourFiled.ColorPopup = colourPopup;
+		trunkColourFiled.ResetButtonPressed +=
+				() => trunkColourFiled.value = Color.saddleBrown;
 	}
 }
 }

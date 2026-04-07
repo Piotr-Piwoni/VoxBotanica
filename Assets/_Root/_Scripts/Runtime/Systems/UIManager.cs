@@ -18,12 +18,30 @@ public class UIManager : MonoBehaviour
 
 	private void Start()
 	{
+		BasePanelSetup();
+
+		var colourPopup = _Root.Q<ColorPopup>();
+		var trunkColourFiled = _Root.Q<ColorField>("TrunkColour");
+		var canopyColourFiled = _Root.Q<ColorField>("CanopyColour");
+
+		trunkColourFiled.ColorPopup = colourPopup;
+		trunkColourFiled.value = Color.saddleBrown;
+		trunkColourFiled.ResetButtonPressed +=
+				() => trunkColourFiled.value = Color.saddleBrown;
+
+		canopyColourFiled.ColorPopup = colourPopup;
+		canopyColourFiled.value = Color.oliveDrab;
+		canopyColourFiled.ResetButtonPressed +=
+				() => canopyColourFiled.value = Color.oliveDrab;
+
+		var exportBtn = _Root.Q<Button>("ExportBtn");
+		exportBtn.clicked += () => { Debug.Log("EXPORT!!!"); };
+	}
+
+	private void BasePanelSetup()
+	{
 		var panel = _Root.Q<GroupBox>();
 		var panelBtn = _Root.Q<Button>("PanelViewBtn");
-		var exportBtn = _Root.Q<Button>("ExportBtn");
-
-		exportBtn.clicked += () => { Debug.Log("EXPORT!!!"); };
-
 		panelBtn.clicked += () =>
 		{
 			float panelWidth = panel.resolvedStyle.width + 10f;
@@ -43,12 +61,6 @@ public class UIManager : MonoBehaviour
 				_Root.style.translate = new Translate(-panelWidth, 0, 0);
 			}
 		};
-
-		var colourPopup = _Root.Q<ColorPopup>();
-		var trunkColourFiled = _Root.Q<ColorField>("TrunkColour");
-		trunkColourFiled.ColorPopup = colourPopup;
-		trunkColourFiled.ResetButtonPressed +=
-				() => trunkColourFiled.value = Color.saddleBrown;
 	}
 }
 }

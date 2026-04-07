@@ -1,29 +1,32 @@
 :root {
     --border-radius: 10px;
-    --primary-colour: #202020;
-    --secondary-colour: #373737;
-    --accent-colour: #cdc290;
+    --primary-colour: rgb(32, 32, 32);
+    --secondary-colour: rgb(55, 55, 55);
+    --accent-colour: rgb(205, 194, 144);
     --text-colour: aliceblue;
     transition-property: translate;
     transition-duration: 1s;
     transition-timing-function: ease-out-bounce;
 }
 
-.unity-group-box {
+.VoxBotanica {
+}
+
+.VoxBotanica .unity-group-box {
     color: var(--text-colour);
     background-color: var(--primary-colour);
     border-radius: var(--border-radius);
     padding: 10px;
 }
 
-.unity-base-slider__input .unity-base-field {
+.VoxBotanica .unity-base-slider__input .unity-base-field {
     flex-grow: 1;
     flex-shrink: 1;
     margin-left: 1px;
 }
 
-.unity-button,
-.unity-base-field {
+.VoxBotanica .unity-button,
+.VoxBotanica .unity-base-field {
     -unity-text-generator: advanced;
     -unity-text-auto-size: best-fit 24px 45px;
     margin: 1px;
@@ -34,12 +37,12 @@
     transition-timing-function: ease-in;
 }
 
-.unity-base-field {
+.VoxBotanica .unity-base-field {
     max-height: 45px;
     min-height: 45px;
 }
 
-.unity-base-field__input {
+.VoxBotanica .unity-base-field__input {
     margin-left: 15px;
     border-radius: var(--border-radius);
     background-color: var(--secondary-colour);
@@ -48,14 +51,14 @@
     border-width: 1px;
 }
 
-.unity-base-slider__input {
+.VoxBotanica .unity-base-slider__input {
     background-color: transparent;
     border-color: transparent;
     border-width: 0;
     justify-content: space-evenly;
 }
 
-.unity-base-slider__drag-container {
+.VoxBotanica .unity-base-slider__drag-container {
     flex-shrink: 1;
     width: 100px;
     background-color: var(--secondary-colour);
@@ -64,7 +67,7 @@
     border-radius: var(--border-radius);
 }
 
-.unity-button {
+.VoxBotanica .unity-button {
     color: var(--text-colour);
     background-color: var(--primary-colour);
     border-color: transparent;
@@ -72,15 +75,15 @@
     border-radius: var(--border-radius);
 }
 
-.unity-button:hover {
-    background-color: #333333;
+.VoxBotanica .unity-button:hover {
+    background-color: rgb(51, 51, 51);
 }
 
-.unity-button:active {
-    background-color: #434343;
+.VoxBotanica .unity-button:active {
+    background-color: rgb(67, 67, 67);
 }
 
-#ExportBtn {
+.VoxBotanica #ExportBtn {
     background-color: var(--secondary-colour);
     border-color: var(--accent-colour);
     border-width: 2px;
@@ -88,32 +91,29 @@
     margin-top: 30px;
 }
 
-#ExportBtn:hover {
-    background-color: #474747;
+.VoxBotanica #ExportBtn:hover {
+    background-color: rgb(71, 71, 71);
 }
 
-#ExportBtn:active {
-    background-color: #606060;
+.VoxBotanica #ExportBtn:active {
+    background-color: rgb(96, 96, 96);
 }
 
-.unity-scroll-view__content-container {
+.VoxBotanica .unity-scroll-view__content-container {
     padding: 5px;
 }
 
-.unity-scroll-view__content-and-vertical-scroll-container
-.unity-base-field {
+.VoxBotanica .unity-scroll-view__content-and-vertical-scroll-container .unity-base-field {
     max-height: none;
     min-height: auto;
     min-width: auto;
     width: 100%;
 }
 
-.unity-scroll-view__content-and-vertical-scroll-container
-.unity-base-field__input {
+.VoxBotanica .unity-scroll-view__content-and-vertical-scroll-container .unity-base-field__input {
     margin: 0;
 }
 
-.unity-scroll-view__content-and-vertical-scroll-container
-.unity-base-slider__drag-container {
+.VoxBotanica .unity-scroll-view__content-and-vertical-scroll-container .unity-base-slider__drag-container {
     border-width: 0;
 }

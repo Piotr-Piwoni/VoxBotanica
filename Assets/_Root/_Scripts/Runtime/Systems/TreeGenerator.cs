@@ -37,7 +37,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 	public TrunkThicknessShape TrunkShape = TrunkThicknessShape.Circular;
 
 	[OdinSerialize, OnValueChanged(nameof(Generate)),]
-	private LindenmayerSystem _LSystem;
+	public LindenmayerSystem _LSystem;
 	[SerializeField, ReadOnly,]
 	private BlockData _TrunkData = new();
 	[SerializeField, ReadOnly,]

@@ -1,10 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
+using Sirenix.Utilities;
 using UnityEngine;
+using UnityEngine.Serialization;
 using VoxBotanica.Components;
 using VoxBotanica.Types;
 using VoxBotanica.Utilities;
+using Random = UnityEngine.Random;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -16,45 +21,69 @@ using TurtleState = TurtleState<Vector3>;
 [HideMonoScript, RequireComponent(typeof(MeshFilter), typeof(MeshRenderer)),]
 public class TreeGenerator : SerializedMonoBehaviour
 {
-	private const int _LENGTH = 1;
-	public string Axiom = "F";
-	[MinValue(1)]
-	public int Iterations = 3;
-	[Range(5f, 90f)]
-	public float AngleXY = 25f;
-	[MinValue(0.1f)]
-	public float TrunkHeight = 3f;
-	[MinValue(1f)]
-	public float MaxHeight = 20f;
-	[Range(0f, 360f),]
-	public float AngleXZ = 25f;
-	[MinValue(1)]
-	public int TrunkThickness = 2;
-	public TrunkThicknessShape TrunkShape = TrunkThicknessShape.Circular;
+	public event Action OnTotalCanopyValueChanged;
 
-	[SerializeField]
-	private Dictionary<string, string> _Rules = new() { { "F", "F[+F]F[-F]F" }, };
-	[SerializeField, DisplayAsString,]
-	private string _CurrentString = string.Empty;
+	private const int _LENGTH = 1;
+
+	[FormerlySerializedAs("AngleXY"), Range(5f, 90f),
+	 OnValueChanged(nameof(Generate)),]
+	public float BranchTilt = 25f;
+	[MinValue(0f), OnValueChanged(nameof(Generate)),]
+	public float TrunkHeight = 3f;
+	[MinValue(1f), OnValueChanged(nameof(Generate)),]
+	public float MaxHeight = 20f;
+	[FormerlySerializedAs("AngleXZ"), Range(0f, 360f),
+	 OnValueChanged(nameof(Generate)),]
+	public float BranchRadialPosition = 25f;
+	[MinValue(1), OnValueChanged(nameof(Generate)),]
+	public int TrunkThickness = 2;
+	[OnValueChanged(nameof(Generate))]
+	public TrunkThicknessShape TrunkShape = TrunkThicknessShape.Circular;
+	[FormerlySerializedAs("_LSystem"), OdinSerialize, OnValueChanged(nameof(Generate)),]
+	public LindenmayerSystem LSystem;
+	[FormerlySerializedAs("_LeafRadius"), MinValue(0),]
+	public int LeafRadius = 2;
+	[FormerlySerializedAs("_TrunkLeafRadius"), MinValue(0),]
+	public int TrunkLeafRadius = 2;
+	[FormerlySerializedAs("_BranchesLeafRadii"), OdinSerialize, MinValue(0),]
+	public List<int> BranchesLeafRadii = new();
+	[FormerlySerializedAs("_TrunkColour"), ColorUsage(true, true),]
+	public Color TrunkColour = Color.saddleBrown;
+	[FormerlySerializedAs("_LeafColour"), ColorUsage(true, true),]
+	public Color LeafColour = Color.oliveDrab;
+
 	[SerializeField, ReadOnly,]
 	private BlockData _TrunkData = new();
 	[SerializeField, ReadOnly,]
 	private BlockData _BranchData = new();
-	[SerializeField]
+	[SerializeField, ReadOnly,]
+	private BlockData _LeafData = new();
+	[SerializeField, ReadOnly,]
 	private MeshFilter _MeshFilter;
+	[SerializeField, ReadOnly,]
+	private MeshRenderer _Renderer;
 	[SerializeField, DisplayAsString,]
 	private string _TrunkString = string.Empty;
 	[SerializeField, ReadOnly,]
 	private List<string> _BranchStrings = new();
+	[SerializeField, ReadOnly,]
+	private Shader _ShaderResource;
 
 	private List<List<Vector3Int>> _Branches = new();
+	private int _OldLeafRadius;
+	private int _OldTrunkLeafRadius;
+	private List<int> _OldBranchesLeafRadii = new();
 
 
 	private void Awake()
 	{
-		_MeshFilter = GetComponent<MeshFilter>();
-
 		_BranchStrings.Capacity = 10;
+		_MeshFilter = GetComponent<MeshFilter>();
+		_Renderer = GetComponent<MeshRenderer>();
+		_ShaderResource = Resources.Load<Material>("Lit").shader;
+		_OldLeafRadius = LeafRadius;
+		TrunkLeafRadius = LeafRadius;
+		_OldTrunkLeafRadius = TrunkLeafRadius;
 	}
 
 	private void Start()
@@ -63,86 +92,53 @@ public class TreeGenerator : SerializedMonoBehaviour
 		Generate();
 	}
 
+	private void Update()
+	{
+		if (!_Renderer.sharedMaterials.IsNullOrEmpty())
+		{
+			Material[] materials = _Renderer.sharedMaterials;
+			materials[0].color = TrunkColour; //< Trunk.
+			materials[1].color = TrunkColour; //< Branches.
+			materials[2].color = LeafColour;  //< Leaves.
+		}
+
+		UpdateLeafGeneration();
+	}
+
+
 	[Button]
 	public void Clear()
 	{
-		_CurrentString = string.Empty;
+		LSystem.Clear();
 		_TrunkString = string.Empty;
 		_BranchStrings.Clear();
 		_BranchData.Clear();
 		_TrunkData.Clear();
-		if (_MeshFilter.sharedMesh)
-			_MeshFilter.sharedMesh.Clear();
+		_LeafData.Clear();
+		if (_MeshFilter) _MeshFilter.sharedMesh.Clear();
 		_Branches.Clear();
+		BranchesLeafRadii.Clear();
+		_OldBranchesLeafRadii.Clear();
 	}
 
 	[Button]
 	public void Generate()
 	{
-		Clear();
-
-		GenerateLSystem();
-		ParseSystem();
-		GenerateVoxelsFromString();
-
-		// Offset the branches based on the trunk thickness.
-		foreach (List<Vector3Int> branch in _Branches)
+		if (!_MeshFilter)
 		{
-			Vector3Int startPoint = branch.First();
-			Vector3Int endPoint = branch.Last();
-			Vector3Int difference = endPoint - startPoint;
-
-			int start = -(TrunkThickness / 2);
-			int end = start + TrunkThickness - 1;
-
-			// Dominant direction.
-			if (Mathf.Abs(difference.x) > Mathf.Abs(difference.z)) //< X dominant.
-			{
-				// Figure out if positive or negative.
-				int offsetX = difference.x > 0 ? end : start;
-
-				for (var k = 0; k < branch.Count; k++)
-				{
-					Vector3Int point = branch[k];
-					point.x += offsetX;
-					branch[k] = point;
-				}
-			}
-			else //< Z dominant.
-			{
-				// Figure out if positive or negative.
-				int offsetZ = difference.z > 0 ? end : start;
-
-				for (var k = 0; k < branch.Count; k++)
-				{
-					Vector3Int point = branch[k];
-					point.z += offsetZ;
-					branch[k] = point;
-				}
-			}
+			Debug.LogError("There's no valid Mesh Filter to use!");
+			return;
 		}
 
-		// Update the "_BranchData" position.
-		foreach (Vector3Int point in _Branches.SelectMany(branch => branch))
-			_BranchData.Add(point);
+		Clear();
+		LSystem.Generate();
 
-		// Create visuals.
-		_TrunkData.ClearBlocks(); //< Update visuals.
-		foreach (Vector3 pos in _TrunkData.Positions)
-			_TrunkData.Add(new Block(pos, _TrunkData.Positions, BlockType.Dirt));
-
-		_BranchData.ClearBlocks(); //< Update visuals.
-		foreach (Vector3 pos in _BranchData.Positions)
-			_BranchData.Add(new Block(pos, _BranchData.Positions, BlockType.Dirt));
-
-		// Gather all meshes.
-		List<Mesh> meshes = new();
-		meshes.AddRange(_TrunkData.GetMeshes());
-		meshes.AddRange(_BranchData.GetMeshes());
-
-		// Combine all cube meshes.
-		Mesh finalMesh = MeshUtils.MergeMeshes(meshes.ToArray());
-		_MeshFilter.sharedMesh = finalMesh;
+		if (string.IsNullOrEmpty(LSystem.SententialForm)) return;
+		ParseSystem();
+		GenerateVoxels();
+		UpdateVoxelData();
+		GenerateLeaves();
+		Render();
 	}
 
 	private void AddTrunkVoxels(Vector3 position)
@@ -177,7 +173,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 		// Add the starting position.
 		var branch = new List<Vector3Int> { Vector3Int.RoundToInt(position), };
-		foreach (char c in sententialForm.TakeWhile(c => !(position.y >= MaxHeight)))
+		foreach (char c in sententialForm.TakeWhile(_ => !(position.y >= MaxHeight)))
 			switch (c)
 			{
 			case 'F':
@@ -189,16 +185,14 @@ public class TreeGenerator : SerializedMonoBehaviour
 			}
 			case '+':
 			{
-				Quaternion rotZ = Quaternion.Euler(0f, 0f, AngleXY);
-				Quaternion rotX = Quaternion.Euler(AngleXZ, 0f, 0f);
-				direction = rotZ * rotX * direction;
+				Quaternion rot = Quaternion.Euler(0f, 0f, BranchTilt);
+				direction = rot * direction;
 				break;
 			}
 			case '-':
 			{
-				Quaternion rotZ = Quaternion.Euler(0f, 0f, -AngleXY);
-				Quaternion rotX = Quaternion.Euler(-AngleXZ, 0f, 0f);
-				direction = rotZ * rotX * direction;
+				Quaternion rot = Quaternion.Euler(0f, 0f, -BranchTilt);
+				direction = rot * direction;
 				break;
 			}
 			case '[':
@@ -217,27 +211,58 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 		// Add the constructed branch.
 		_Branches.Add(branch);
+		// Add a leaf radius value for this branch.
+		BranchesLeafRadii.Add(LeafRadius);
 	}
 
-	private void GenerateLSystem()
+	private void GenerateCluster(Vector3Int center, int radius)
 	{
-		string result = Axiom;
-
-		for (var i = 0; i < Iterations; i++)
+		for (int x = -radius; x <= radius; x++)
+		for (int y = -radius; y <= radius; y++)
+		for (int z = -radius; z <= radius; z++)
 		{
-			string newString = result.Aggregate(string.Empty,
-												(current, c) => current +
-													(_Rules.ContainsKey(c.ToString()) ?
-															 _Rules[c.ToString()] :
-															 c.ToString()));
-			result = newString;
+			Vector3Int offset = new(x, y, z);
+			if (offset.sqrMagnitude > radius * radius) continue;
+
+			Vector3Int leafPos = center + offset;
+
+			if (leafPos.y < TrunkHeight) continue;
+
+			// Avoid overwriting trunk and branch.
+			if (_TrunkData.Contains(leafPos)) continue;
+			if (_BranchData.Contains(leafPos)) continue;
+
+			_LeafData.Add(leafPos);
+		}
+	}
+
+	private void GenerateLeaves()
+	{
+		_LeafData.Clear();
+
+		int maxY = _TrunkData.Positions.Last().y;
+		foreach (Vector3Int position in _TrunkData.Positions
+												  .Where(position => position.y == maxY))
+			GenerateCluster(position, TrunkLeafRadius);
+
+
+		for (var i = 0; i < _Branches.Count; i++)
+		{
+			List<Vector3Int> branch = _Branches[i];
+			if (branch.IsNullOrEmpty()) continue;
+			GenerateCluster(branch.Last(), BranchesLeafRadii[i]);
 		}
 
-		_CurrentString = result;
-		Debug.Log($"Current String: <color=yellow>{_CurrentString}</color>");
+		foreach (Vector3 pos in _LeafData.Positions)
+			_LeafData.Add(new Block(pos, _LeafData.Positions, BlockType.Dirt));
+
+		// Create a tracking list if it doesn't already exist or the size is outdated.
+		if (_OldBranchesLeafRadii.IsNullOrEmpty() ||
+			_OldBranchesLeafRadii.Count != BranchesLeafRadii.Count)
+			_OldBranchesLeafRadii = new List<int>(BranchesLeafRadii);
 	}
 
-	private void GenerateVoxelsFromString()
+	private void GenerateVoxels()
 	{
 		if (string.IsNullOrEmpty(_TrunkString))
 			return;
@@ -268,24 +293,29 @@ public class TreeGenerator : SerializedMonoBehaviour
 				position = next;
 				break;
 			}
-			case '+':
-			{
-				Quaternion rotZ = Quaternion.Euler(0f, 0f, AngleXY);
-				Quaternion rotX = Quaternion.Euler(AngleXZ, 0f, 0f);
-				direction = rotZ * rotX * direction;
-				break;
-			}
-			case '-':
-			{
-				Quaternion rotZ = Quaternion.Euler(0f, 0f, -AngleXY);
-				Quaternion rotX = Quaternion.Euler(-AngleXZ, 0f, 0f);
-				direction = rotZ * rotX * direction;
-				break;
-			}
 			case 'B':
 			{
 				if (position.y < TrunkHeight) break;
-				GenerateBranch(_BranchStrings[branchIndex], position, direction);
+
+				Vector3 trunkDir = direction.normalized;
+
+				// Pick an arbitrary perpendicular axis
+				Vector3 axis = Vector3.Cross(trunkDir, Vector3.up);
+				if (axis == Vector3.zero)
+					axis = Vector3.Cross(trunkDir, Vector3.forward);
+				axis.Normalize();
+
+				// Random rotation around trunk
+				float randomAzimuth = Random.Range(0f, 360f);
+				Quaternion rot = Quaternion.AngleAxis(randomAzimuth, axis);
+
+				// Base XZ rotation
+				Quaternion baseRot = Quaternion.Euler(0f, BranchRadialPosition, 0f);
+
+				// Apply rotations
+				Vector3 branchDirection = rot * baseRot * trunkDir;
+
+				GenerateBranch(_BranchStrings[branchIndex], position, branchDirection);
 				branchIndex++;
 				break;
 			}
@@ -306,7 +336,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 		var depth = 0;
 		var currentBranch = string.Empty;
 
-		foreach (char c in _CurrentString)
+		foreach (char c in LSystem.SententialForm)
 		{
 			switch (c)
 			{
@@ -342,6 +372,143 @@ public class TreeGenerator : SerializedMonoBehaviour
 		}
 	}
 
+	private void Render()
+	{
+		_MeshFilter.sharedMesh.Clear();
+
+		// Merge meshes individually.
+		List<Mesh> meshes = new()
+		{
+				MeshUtils.MergeMeshes(_TrunkData.GetMeshes()),
+				MeshUtils.MergeMeshes(_BranchData.GetMeshes()),
+				MeshUtils.MergeMeshes(_LeafData.GetMeshes()),
+		};
+
+		// Create a new mesh for final output.
+		Mesh finalMesh = MeshUtils.CreateSubMeshes(meshes);
+		finalMesh.name = "Tree_Final";
+
+		_MeshFilter.sharedMesh = finalMesh;
+
+		// Add materials based on the order of the submeshes.
+		if (!_Renderer.sharedMaterials.IsNullOrEmpty()) return;
+		var trunkMaterial = new Material(_ShaderResource) { name = "TrunkMat", };
+		var branchMaterial = new Material(_ShaderResource) { name = "BranchMat", };
+		var leafMaterial = new Material(_ShaderResource) { name = "LeavesMat", };
+
+		trunkMaterial.color = TrunkColour;
+		branchMaterial.color = TrunkColour;
+		leafMaterial.color = LeafColour;
+
+		_Renderer.sharedMaterials = new[]
+		{
+				trunkMaterial,  //< Trunk Mesh.
+				branchMaterial, //< Branches Mesh.
+				leafMaterial,   //< Leaves Mesh.
+		};
+	}
+
+	private void UpdateLeafGeneration()
+	{
+		var hasChanged = false;
+
+		int count = Mathf.Min(BranchesLeafRadii.Count, _OldBranchesLeafRadii.Count);
+		for (var i = 0; i < count; i++)
+		{
+			int clamped = Mathf.Clamp(BranchesLeafRadii[i], 0, int.MaxValue);
+			if (clamped == _OldBranchesLeafRadii[i]) continue;
+
+			BranchesLeafRadii[i] = clamped;
+			_OldBranchesLeafRadii[i] = clamped;
+
+			hasChanged = true;
+		}
+
+		if (_OldTrunkLeafRadius != TrunkLeafRadius)
+		{
+			TrunkLeafRadius = Mathf.Clamp(TrunkLeafRadius, 0, int.MaxValue);
+			_OldTrunkLeafRadius = TrunkLeafRadius;
+			hasChanged = true;
+		}
+
+		if (LeafRadius != _OldLeafRadius)
+		{
+			LeafRadius = Mathf.Clamp(LeafRadius, 0, int.MaxValue);
+			_OldLeafRadius = LeafRadius;
+
+			// Update Trunk Leaf Radius.
+			TrunkLeafRadius = LeafRadius;
+			_OldTrunkLeafRadius = TrunkLeafRadius;
+
+			// Update individual branch leaf radii.
+			for (var i = 0; i < BranchesLeafRadii.Count; i++)
+				BranchesLeafRadii[i] = LeafRadius;
+
+			hasChanged = true;
+			OnTotalCanopyValueChanged?.Invoke();
+		}
+
+		if (!hasChanged) return;
+		GenerateLeaves();
+		Render();
+	}
+
+	private void UpdateVoxelData()
+	{
+		// Offset the branches based on the trunk thickness.
+		foreach (List<Vector3Int> branch in _Branches)
+		{
+			Vector3Int startPoint = branch.First();
+			Vector3Int endPoint = branch.Last();
+			Vector3Int difference = endPoint - startPoint;
+
+			int start = -(TrunkThickness / 2);
+			int end = start + TrunkThickness - 1;
+
+			// Dominant direction.
+			if (Mathf.Abs(difference.x) > Mathf.Abs(difference.z)) //< X dominant.
+			{
+				// Figure out if positive or negative.
+				int offsetX = difference.x > 0 ? end : start;
+
+				for (var k = 0; k < branch.Count; k++)
+				{
+					Vector3Int point = branch[k];
+					point.x += offsetX;
+					branch[k] = point;
+				}
+			}
+
+			{
+				// Figure out if positive or negative.
+				int offsetZ = difference.z > 0 ? end : start;
+
+				for (var k = 0; k < branch.Count; k++)
+				{
+					Vector3Int point = branch[k];
+					point.z += offsetZ;
+					branch[k] = point;
+				}
+			}
+		}
+
+		// Update the "_BranchData" position.
+		// Ignore the first intersecting branch block.
+		foreach (List<Vector3Int> branch in _Branches)
+			_BranchData.AddRange(_TrunkData.Contains(branch.First()) ?
+										 branch.GetRange(1, branch.Count - 1) :
+										 branch);
+
+		// Create visuals.
+		_TrunkData.ClearBlocks(); //< Update visuals.
+		foreach (Vector3 pos in _TrunkData.Positions)
+			_TrunkData.Add(new Block(pos, _TrunkData.Positions, BlockType.Dirt));
+
+		_BranchData.ClearBlocks(); //< Update visuals.
+		foreach (Vector3 pos in _BranchData.Positions)
+			_BranchData.Add(new Block(pos, _BranchData.Positions, BlockType.Dirt));
+	}
+
 	public enum TrunkThicknessShape
 	{
 		Circular,
@@ -351,23 +518,51 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 	#if UNITY_EDITOR
 	[SerializeField]
-	private Color _GizmosColour = Color.magenta;
+	private Color _DebugTreeColour = Color.magenta;
+	[SerializeField]
+	private Color _DebugEndPointsColour = new(0.6f, 0.3f, 1f);
 	[SerializeField, Range(1f, 5f),]
 	private float _GizmosLineWidth = 4f;
+	[SerializeField, Range(0.1f, 2f),]
+	private float _GizmosEndPointRadius = 0.45f;
+	[SerializeField]
+	private bool _ShowGizmos;
+	[SerializeField]
+	private bool _ShowTree;
+	[SerializeField]
+	private bool _ShowEndPoints;
+
 
 	private void OnDrawGizmos()
 	{
-		if (string.IsNullOrEmpty(_CurrentString))
-			return;
+		if (!_ShowGizmos || string.IsNullOrEmpty(LSystem.SententialForm)) return;
+
+		RenderDebugTree();
+		RenderBranchEndPoints();
+	}
+
+	private void RenderBranchEndPoints()
+	{
+		if (!_ShowEndPoints) return;
+		Gizmos.color = _DebugEndPointsColour;
+
+		IEnumerable<Vector3Int> endPoints = _Branches.Select(branch => branch.Last());
+		foreach (Vector3Int point in endPoints)
+			Gizmos.DrawSphere(point, _GizmosEndPointRadius);
+	}
+
+	private void RenderDebugTree()
+	{
+		if (!_ShowTree) return;
 
 		var stack = new Stack<TurtleState>();
 		Vector3 renderOffset = Vector3.back;
 		Vector3 position = Vector3.zero + renderOffset;
 		Vector3 direction = Vector3.up;
 
-		Handles.color = _GizmosColour;
+		Handles.color = _DebugTreeColour;
 
-		foreach (char c in _CurrentString)
+		foreach (char c in LSystem.SententialForm)
 		{
 			float height = position.y;
 
@@ -390,8 +585,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 			case '+':
 				if (height >= TrunkHeight)
 				{
-					Quaternion rotZ = Quaternion.Euler(0f, 0f, AngleXY);
-					Quaternion rotX = Quaternion.Euler(AngleXZ, 0f, 0f);
+					Quaternion rotZ = Quaternion.Euler(0f, 0f, BranchTilt);
+					Quaternion rotX = Quaternion.Euler(BranchRadialPosition, 0f, 0f);
 					direction = rotZ * rotX * direction;
 				}
 
@@ -399,8 +594,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 			case '-':
 				if (height >= TrunkHeight)
 				{
-					Quaternion rotZ = Quaternion.Euler(0f, 0f, -AngleXY);
-					Quaternion rotX = Quaternion.Euler(-AngleXZ, 0f, 0f);
+					Quaternion rotZ = Quaternion.Euler(0f, 0f, -BranchTilt);
+					Quaternion rotX = Quaternion.Euler(-BranchRadialPosition, 0f, 0f);
 					direction = rotZ * rotX * direction;
 				}
 
@@ -420,13 +615,6 @@ public class TreeGenerator : SerializedMonoBehaviour
 				break;
 			}
 		}
-	}
-
-	private void OnValidate()
-	{
-		if (!_MeshFilter || _CurrentString == string.Empty) return;
-
-		Generate();
 	}
 	#endif
 }

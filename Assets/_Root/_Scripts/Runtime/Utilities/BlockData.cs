@@ -25,6 +25,16 @@ public class BlockData
 		Blocks.Add(block);
 	}
 
+	public void AddRange(IEnumerable<Vector3Int> collection)
+	{
+		Positions.AddRange(collection);
+	}
+
+	public void AddRange(IEnumerable<Block> collection)
+	{
+		Blocks.AddRange(collection);
+	}
+
 	public void Clear()
 	{
 		Positions.Clear();
@@ -57,6 +67,16 @@ public class BlockData
 		for (var i = 0; i < Blocks.Count; i++)
 			meshes[i] = Blocks[i].Mesh;
 		return meshes;
+	}
+
+	public void Remove(Vector3Int position)
+	{
+		Positions.Remove(position);
+	}
+
+	public void Remove(Block block)
+	{
+		Blocks.Remove(block);
 	}
 }
 }

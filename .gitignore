@@ -101,3 +101,6 @@ InitTestScene*.unity*
 
 # Jetbrains Rider IDE
 /.idea
+Assets/_Recovery/
+
+Assets/_Recovery.meta

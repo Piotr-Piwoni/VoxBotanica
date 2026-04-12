@@ -1168,7 +1168,7 @@ MonoBehaviour:
   BranchTilt: 25
   TrunkHeight: 3
   MaxHeight: 20
-  BranchRadialPosition: 25
+  BranchRadialPosition: 360
   TrunkThickness: 1
   TrunkShape: 0
   LSystem:

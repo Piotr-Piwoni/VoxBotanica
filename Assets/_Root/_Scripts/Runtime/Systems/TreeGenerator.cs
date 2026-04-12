@@ -1,3 +1,4 @@
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Sirenix.OdinInspector;
@@ -20,11 +21,14 @@ using TurtleState = TurtleState<Vector3>;
 [HideMonoScript, RequireComponent(typeof(MeshFilter), typeof(MeshRenderer)),]
 public class TreeGenerator : SerializedMonoBehaviour
 {
+	public event Action OnTotalCanopyValueChanged;
+
 	private const int _LENGTH = 1;
+
 	[FormerlySerializedAs("AngleXY"), Range(5f, 90f),
 	 OnValueChanged(nameof(Generate)),]
 	public float BranchTilt = 25f;
-	[MinValue(0.1f), OnValueChanged(nameof(Generate)),]
+	[MinValue(0f), OnValueChanged(nameof(Generate)),]
 	public float TrunkHeight = 3f;
 	[MinValue(1f), OnValueChanged(nameof(Generate)),]
 	public float MaxHeight = 20f;
@@ -35,9 +39,19 @@ public class TreeGenerator : SerializedMonoBehaviour
 	public int TrunkThickness = 2;
 	[OnValueChanged(nameof(Generate))]
 	public TrunkThicknessShape TrunkShape = TrunkThicknessShape.Circular;
+	[FormerlySerializedAs("_LSystem"), OdinSerialize, OnValueChanged(nameof(Generate)),]
+	public LindenmayerSystem LSystem;
+	[FormerlySerializedAs("_LeafRadius"), MinValue(0),]
+	public int LeafRadius = 2;
+	[FormerlySerializedAs("_TrunkLeafRadius"), MinValue(0),]
+	public int TrunkLeafRadius = 2;
+	[FormerlySerializedAs("_BranchesLeafRadii"), OdinSerialize, MinValue(0),]
+	public List<int> BranchesLeafRadii = new();
+	[FormerlySerializedAs("_TrunkColour"), ColorUsage(true, true),]
+	public Color TrunkColour = Color.saddleBrown;
+	[FormerlySerializedAs("_LeafColour"), ColorUsage(true, true),]
+	public Color LeafColour = Color.oliveDrab;
 
-	[OdinSerialize, OnValueChanged(nameof(Generate)),]
-	public LindenmayerSystem _LSystem;
 	[SerializeField, ReadOnly,]
 	private BlockData _TrunkData = new();
 	[SerializeField, ReadOnly,]
@@ -52,16 +66,6 @@ public class TreeGenerator : SerializedMonoBehaviour
 	private string _TrunkString = string.Empty;
 	[SerializeField, ReadOnly,]
 	private List<string> _BranchStrings = new();
-	[SerializeField, MinValue(0),]
-	private int _LeafRadius = 2;
-	[SerializeField, MinValue(0),]
-	private int _TrunkLeafRadius = 2;
-	[OdinSerialize, MinValue(0),]
-	private List<int> _BranchesLeafRadii = new();
-	[SerializeField, ColorUsage(true, true),]
-	private Color _TrunkColour = Color.saddleBrown;
-	[SerializeField, ColorUsage(true, true),]
-	private Color _LeafColour = Color.oliveDrab;
 	[SerializeField, ReadOnly,]
 	private Shader _ShaderResource;
 
@@ -77,9 +81,9 @@ public class TreeGenerator : SerializedMonoBehaviour
 		_MeshFilter = GetComponent<MeshFilter>();
 		_Renderer = GetComponent<MeshRenderer>();
 		_ShaderResource = Resources.Load<Material>("Lit").shader;
-		_OldLeafRadius = _LeafRadius;
-		_TrunkLeafRadius = _LeafRadius;
-		_OldTrunkLeafRadius = _TrunkLeafRadius;
+		_OldLeafRadius = LeafRadius;
+		TrunkLeafRadius = LeafRadius;
+		_OldTrunkLeafRadius = TrunkLeafRadius;
 	}
 
 	private void Start()
@@ -105,7 +109,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 	[Button]
 	public void Clear()
 	{
-		_LSystem.Clear();
+		LSystem.Clear();
 		_TrunkString = string.Empty;
 		_BranchStrings.Clear();
 		_BranchData.Clear();
@@ -113,7 +117,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 		_LeafData.Clear();
 		if (_MeshFilter) _MeshFilter.sharedMesh.Clear();
 		_Branches.Clear();
-		_BranchesLeafRadii.Clear();
+		BranchesLeafRadii.Clear();
 		_OldBranchesLeafRadii.Clear();
 	}
 
@@ -127,9 +131,9 @@ public class TreeGenerator : SerializedMonoBehaviour
 		}
 
 		Clear();
-		_LSystem.Generate();
+		LSystem.Generate();
 
-		if (string.IsNullOrEmpty(_LSystem.SententialForm)) return;
+		if (string.IsNullOrEmpty(LSystem.SententialForm)) return;
 		ParseSystem();
 		GenerateVoxels();
 		UpdateVoxelData();
@@ -208,7 +212,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 		// Add the constructed branch.
 		_Branches.Add(branch);
 		// Add a leaf radius value for this branch.
-		_BranchesLeafRadii.Add(_LeafRadius);
+		BranchesLeafRadii.Add(LeafRadius);
 	}
 
 	private void GenerateCluster(Vector3Int center, int radius)
@@ -239,14 +243,14 @@ public class TreeGenerator : SerializedMonoBehaviour
 		int maxY = _TrunkData.Positions.Last().y;
 		foreach (Vector3Int position in _TrunkData.Positions
 												  .Where(position => position.y == maxY))
-			GenerateCluster(position, _TrunkLeafRadius);
+			GenerateCluster(position, TrunkLeafRadius);
 
 
 		for (var i = 0; i < _Branches.Count; i++)
 		{
 			List<Vector3Int> branch = _Branches[i];
 			if (branch.IsNullOrEmpty()) continue;
-			GenerateCluster(branch.Last(), _BranchesLeafRadii[i]);
+			GenerateCluster(branch.Last(), BranchesLeafRadii[i]);
 		}
 
 		foreach (Vector3 pos in _LeafData.Positions)
@@ -254,8 +258,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 		// Create a tracking list if it doesn't already exist or the size is outdated.
 		if (_OldBranchesLeafRadii.IsNullOrEmpty() ||
-			_OldBranchesLeafRadii.Count != _BranchesLeafRadii.Count)
-			_OldBranchesLeafRadii = new List<int>(_BranchesLeafRadii);
+			_OldBranchesLeafRadii.Count != BranchesLeafRadii.Count)
+			_OldBranchesLeafRadii = new List<int>(BranchesLeafRadii);
 	}
 
 	private void GenerateVoxels()
@@ -332,7 +336,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 		var depth = 0;
 		var currentBranch = string.Empty;
 
-		foreach (char c in _LSystem.SententialForm)
+		foreach (char c in LSystem.SententialForm)
 		{
 			switch (c)
 			{
@@ -408,39 +412,40 @@ public class TreeGenerator : SerializedMonoBehaviour
 	{
 		var hasChanged = false;
 
-		int count = Mathf.Min(_BranchesLeafRadii.Count, _OldBranchesLeafRadii.Count);
+		int count = Mathf.Min(BranchesLeafRadii.Count, _OldBranchesLeafRadii.Count);
 		for (var i = 0; i < count; i++)
 		{
-			int clamped = Mathf.Clamp(_BranchesLeafRadii[i], 0, int.MaxValue);
+			int clamped = Mathf.Clamp(BranchesLeafRadii[i], 0, int.MaxValue);
 			if (clamped == _OldBranchesLeafRadii[i]) continue;
 
-			_BranchesLeafRadii[i] = clamped;
+			BranchesLeafRadii[i] = clamped;
 			_OldBranchesLeafRadii[i] = clamped;
 
 			hasChanged = true;
 		}
 
-		if (_OldTrunkLeafRadius != _TrunkLeafRadius)
+		if (_OldTrunkLeafRadius != TrunkLeafRadius)
 		{
-			_TrunkLeafRadius = Mathf.Clamp(_TrunkLeafRadius, 0, int.MaxValue);
-			_OldTrunkLeafRadius = _TrunkLeafRadius;
+			TrunkLeafRadius = Mathf.Clamp(TrunkLeafRadius, 0, int.MaxValue);
+			_OldTrunkLeafRadius = TrunkLeafRadius;
 			hasChanged = true;
 		}
 
-		if (_LeafRadius != _OldLeafRadius)
+		if (LeafRadius != _OldLeafRadius)
 		{
-			_LeafRadius = Mathf.Clamp(_LeafRadius, 0, int.MaxValue);
-			_OldLeafRadius = _LeafRadius;
+			LeafRadius = Mathf.Clamp(LeafRadius, 0, int.MaxValue);
+			_OldLeafRadius = LeafRadius;
 
 			// Update Trunk Leaf Radius.
-			_TrunkLeafRadius = _LeafRadius;
-			_OldTrunkLeafRadius = _TrunkLeafRadius;
+			TrunkLeafRadius = LeafRadius;
+			_OldTrunkLeafRadius = TrunkLeafRadius;
 
 			// Update individual branch leaf radii.
-			for (var i = 0; i < _BranchesLeafRadii.Count; i++)
-				_BranchesLeafRadii[i] = _LeafRadius;
+			for (var i = 0; i < BranchesLeafRadii.Count; i++)
+				BranchesLeafRadii[i] = LeafRadius;
 
 			hasChanged = true;
+			OnTotalCanopyValueChanged?.Invoke();
 		}
 
 		if (!hasChanged) return;
@@ -530,7 +535,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 	private void OnDrawGizmos()
 	{
-		if (!_ShowGizmos || string.IsNullOrEmpty(_LSystem.SententialForm)) return;
+		if (!_ShowGizmos || string.IsNullOrEmpty(LSystem.SententialForm)) return;
 
 		RenderDebugTree();
 		RenderBranchEndPoints();
@@ -557,7 +562,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 		Handles.color = _DebugTreeColour;
 
-		foreach (char c in _LSystem.SententialForm)
+		foreach (char c in LSystem.SententialForm)
 		{
 			float height = position.y;
 

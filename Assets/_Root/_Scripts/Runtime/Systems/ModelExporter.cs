@@ -4,6 +4,7 @@ using Autodesk.Fbx;
 using Sirenix.OdinInspector;
 using Sirenix.Utilities;
 using UnityEngine;
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -18,9 +19,8 @@ public class ModelExporter : MonoBehaviour
 	public string DestinationPath = "";
 	[LabelText("File Name (optional)")]
 	public string ExportFileName = "";
-
-	[SerializeField]
-	private GameObject _ExportObject;
+	[FormerlySerializedAs("_ExportObject")]
+	public GameObject ExportObject;
 
 	private FbxManager _Manager;
 
@@ -40,7 +40,7 @@ public class ModelExporter : MonoBehaviour
 	[Button]
 	public void Export()
 	{
-		if (_ExportObject == null)
+		if (ExportObject == null)
 		{
 			Debug.LogError("No export object assigned.");
 			return;
@@ -53,8 +53,8 @@ public class ModelExporter : MonoBehaviour
 
 		string filePath = Path.Combine(exportDirectory, fileName);
 
-		var meshFilter = _ExportObject.GetComponent<MeshFilter>();
-		var meshRenderer = _ExportObject.GetComponent<MeshRenderer>();
+		var meshFilter = ExportObject.GetComponent<MeshFilter>();
+		var meshRenderer = ExportObject.GetComponent<MeshRenderer>();
 
 		if (!meshFilter || !meshRenderer)
 		{
@@ -178,7 +178,7 @@ public class ModelExporter : MonoBehaviour
 	private string BuildFileName()
 	{
 		string baseName = string.IsNullOrWhiteSpace(ExportFileName) ?
-								  _ExportObject.name.ToTitleCase() :
+								  ExportObject.name.ToTitleCase() :
 								  ExportFileName;
 
 		// CHeck for invalid characters.

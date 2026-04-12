@@ -14,6 +14,9 @@
                 <ui:UnsignedIntegerField label="Top Canopy Radius" value="2" name="TopCanopyRadiusField" class="VoxBotanica"/>
                 <Game.UI.ColorField name="TrunkColour" label="Trunk Colour" class="VoxBotanica"/>
                 <Game.UI.ColorField name="CanopyColour" label="Canopy Colour" class="VoxBotanica"/>
+                <ui:Label text="Export Settings" name="ExportSettingsTitle" style="-unity-text-auto-size: best-fit 26px 45px; margin-top: 30px;"/>
+                <ui:TextField label="Destination Path" placeholder-text="e.g. Root/Export" hide-placeholder-on-focus="true" name="FolderPathField" class="VoxBotanica" style="margin-top: 5px;"/>
+                <ui:TextField label="Custom FIle Name" placeholder-text="e.g. Tree" hide-placeholder-on-focus="true" name="FileNameField" class="VoxBotanica"/>
                 <ui:Button text="Export" name="ExportBtn" enabled="true" class="VoxBotanica" style="align-self: center;"/>
             </ui:ScrollView>
         </ui:GroupBox>

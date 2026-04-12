@@ -19,6 +19,8 @@ public class UIManager : MonoBehaviour
 	private EnumField _TrunkShapeField;
 	private Slider _BranchRadialField;
 	private Slider _BranchTiltField;
+	private TextField _DestinationFolderPathField;
+	private TextField _FileNameField;
 	private UIDocument _Document;
 	private UnsignedIntegerField _IterationField;
 	private UnsignedIntegerField _MaxHeightField;
@@ -28,6 +30,7 @@ public class UIManager : MonoBehaviour
 	private UnsignedIntegerField _TrunkThicknessField;
 	private VisualElement _Root;
 
+
 	private void Awake()
 	{
 		_Document = GetComponent<UIDocument>();
@@ -36,6 +39,8 @@ public class UIManager : MonoBehaviour
 
 	private void Start()
 	{
+		_Exporter.ExportObject = _Generator.gameObject;
+
 		BasePanelSetup();
 
 		// Unsigned int fields.
@@ -63,6 +68,10 @@ public class UIManager : MonoBehaviour
 		_TrunkShapeField.value = _Generator.TrunkShape;
 
 		ColourFieldsSetup();
+
+		// Export settings.
+		_DestinationFolderPathField = _Root.Q<TextField>("FolderPathField");
+		_FileNameField = _Root.Q<TextField>("FileNameField");
 
 		var exportBtn = _Root.Q<Button>("ExportBtn");
 		exportBtn.clicked += () => _Exporter.Export();
@@ -127,6 +136,11 @@ public class UIManager : MonoBehaviour
 		// ReSharper disable once RedundantCheckBeforeAssignment
 		if (_CanopyColourField.value != _Generator.LeafColour)
 			_Generator.LeafColour = _CanopyColourField.value;
+
+
+		// Export Settings
+		_Exporter.DestinationPath = _DestinationFolderPathField.value;
+		_Exporter.ExportFileName = _FileNameField.value;
 
 
 		if (!_ReGenerate) return;

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using Autodesk.Fbx;
 using Sirenix.OdinInspector;
 using Sirenix.Utilities;
@@ -10,8 +11,11 @@ public class ModelExporter : MonoBehaviour
 {
 	private static readonly int _BaseColor = Shader.PropertyToID("_BaseColor");
 
-	public string ExportFolderPath =
-			@"W:\Projects\Engines\Unity\Abertay\[CMP400] - Honours Project\VoxBotanica\Assets\_Root\Exports";
+	[Title("Export Settings")]
+	public string DestinationPath = "";
+	[LabelText("File Name (optional)")]
+	public string ExportFileName = "";
+
 	[SerializeField]
 	private GameObject _ExportObject;
 
@@ -26,15 +30,25 @@ public class ModelExporter : MonoBehaviour
 
 	private void OnDestroy()
 	{
-		_Manager.Dispose();
+		_Manager?.Dispose();
 	}
 
 
 	[Button]
 	public void Export()
 	{
-		var fileName = $"{_ExportObject.name.ToTitleCase()}.fbx";
-		string filePath = Path.Combine(ExportFolderPath, fileName);
+		if (_ExportObject == null)
+		{
+			Debug.LogError("No export object assigned.");
+			return;
+		}
+
+		string fileName = BuildFileName();
+
+		string exportDirectory = GetResolvedExportDirectory();
+		Directory.CreateDirectory(exportDirectory);
+
+		string filePath = Path.Combine(exportDirectory, fileName);
 
 		var meshFilter = _ExportObject.GetComponent<MeshFilter>();
 		var meshRenderer = _ExportObject.GetComponent<MeshRenderer>();
@@ -53,6 +67,7 @@ public class ModelExporter : MonoBehaviour
 			_Manager.SetIOSettings(FbxIOSettings.Create(_Manager, Globals.IOSROOT));
 		}
 
+		// Start writing the FBX file.
 		using (var exporter = FbxExporter.Create(_Manager, "Exporter"))
 		{
 			if (!exporter.Initialize(filePath, -1, _Manager.GetIOSettings()))
@@ -69,14 +84,11 @@ public class ModelExporter : MonoBehaviour
 			Vector3[] normals = mesh.normals;
 			Vector2[] uvs = mesh.uv;
 
-			// Vertices.
 			fbxMesh.InitControlPoints(vertices.Length);
 			for (var i = 0; i < vertices.Length; i++)
-				fbxMesh.SetControlPointAt(new FbxVector4(vertices[i].x,
-														 vertices[i].y,
-														 vertices[i].z), i);
+				fbxMesh.SetControlPointAt(
+						new FbxVector4(vertices[i].x, vertices[i].y, vertices[i].z), i);
 
-			// Normals.
 			FbxLayerElementNormal normalLayer = fbxMesh.CreateElementNormal();
 			normalLayer.SetMappingMode(FbxLayerElement.EMappingMode.eByControlPoint);
 			normalLayer.SetReferenceMode(FbxLayerElement.EReferenceMode.eDirect);
@@ -84,7 +96,6 @@ public class ModelExporter : MonoBehaviour
 			foreach (Vector3 n in normals)
 				normalLayer.GetDirectArray().Add(new FbxVector4(n.x, n.y, n.z));
 
-			// UVs.
 			FbxLayerElementUV uvLayer = fbxMesh.CreateElementUV("UVSet");
 			uvLayer.SetMappingMode(FbxLayerElement.EMappingMode.eByControlPoint);
 			uvLayer.SetReferenceMode(FbxLayerElement.EReferenceMode.eDirect);
@@ -92,12 +103,10 @@ public class ModelExporter : MonoBehaviour
 			foreach (Vector2 uv in uvs)
 				uvLayer.GetDirectArray().Add(new FbxVector2(uv.x, uv.y));
 
-			// Material layer.
 			FbxLayerElementMaterial materialLayer = fbxMesh.CreateElementMaterial();
 			materialLayer.SetMappingMode(FbxLayerElement.EMappingMode.eByPolygon);
 			materialLayer.SetReferenceMode(FbxLayerElement.EReferenceMode.eIndexToDirect);
 
-			// Materials.
 			Material[] materials = meshRenderer.sharedMaterials;
 			foreach (Material material in materials)
 			{
@@ -107,7 +116,6 @@ public class ModelExporter : MonoBehaviour
 									   material.GetColor(_BaseColor) :
 									   material.color;
 
-				// Convert to gamma space.
 				colour = colour.linear;
 
 				fbxMaterial.Diffuse.Set(new FbxDouble3(colour.r, colour.g, colour.b));
@@ -118,7 +126,6 @@ public class ModelExporter : MonoBehaviour
 				node.AddMaterial(fbxMaterial);
 			}
 
-			// Submeshes.
 			for (var subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
 			{
 				int[] triangles = mesh.GetTriangles(subMeshIndex);
@@ -142,6 +149,36 @@ public class ModelExporter : MonoBehaviour
 		}
 
 		Debug.Log("Exported FBX to: " + filePath);
+	}
+
+	private string BuildFileName()
+	{
+		string baseName = string.IsNullOrWhiteSpace(ExportFileName) ?
+								  _ExportObject.name.ToTitleCase() :
+								  ExportFileName;
+
+		// CHeck for invalid characters.
+		baseName = Path.GetInvalidFileNameChars()
+					   .Aggregate(baseName, (current, ch) =>
+										  current.Replace(ch.ToString(), ""));
+
+		return baseName + ".fbx";
+	}
+
+	private string GetResolvedExportDirectory()
+	{
+		if (string.IsNullOrWhiteSpace(DestinationPath))
+		{
+			string exeRoot = Path.GetDirectoryName(Application.dataPath);
+			return Path.Combine(exeRoot ?? string.Empty, "VoxBotanica Exports");
+		}
+
+		// Priorities local directory.
+		if (Path.IsPathRooted(DestinationPath))
+			return DestinationPath;
+
+		string rootPath = Path.GetDirectoryName(Application.dataPath);
+		return Path.Combine(rootPath ?? string.Empty, DestinationPath);
 	}
 }
 }

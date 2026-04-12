@@ -19,6 +19,7 @@ public class UIManager : MonoBehaviour
 	private ColorField _TrunkColourField;
 	private EnumField _TrunkShapeField;
 	private IntListFoldout _BranchLeafRadiiField;
+	private LSystemRulesFoldout _RulesField;
 	private Slider _BranchRadialField;
 	private Slider _BranchTiltField;
 	private TextField _DestinationFolderPathField;
@@ -77,6 +78,13 @@ public class UIManager : MonoBehaviour
 									  {
 										  _Generator.BranchesLeafRadii[index] = value;
 									  });
+		_RulesField = _Root.Q<LSystemRulesFoldout>("RulesField");
+		_RulesField.SetData(_Generator.LSystem.Rules, (key, value) =>
+		{
+			_Generator.LSystem.Rules[key] = value;
+			_ReGenerate = true;
+		});
+
 
 		// Export settings.
 		_DestinationFolderPathField = _Root.Q<TextField>("FolderPathField");

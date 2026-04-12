@@ -4,6 +4,7 @@
         <ui:GroupBox text="Generator Settings" class="VoxBotanica" style="-unity-text-auto-size: best-fit 42px 70px; -unity-text-generator: advanced; width: 550px; max-width: 50%; min-width: 550px; align-items: stretch; align-self: flex-start; height: auto; margin-right: 0; border-top-right-radius: 0; justify-content: flex-start; max-height: 75%;">
             <ui:ScrollView horizontal-scroller-visibility="Hidden" class="VoxBotanica" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;">
                 <ui:UnsignedIntegerField label="Iteration" value="3" name="IterationField" focusable="true" class="AutoFontSize-Fields VoxBotanica" style="max-width: none;"/>
+                <VoxBotanica.UIElements.LSystemRulesFoldout name="RulesField" title="Rules"/>
                 <ui:Slider label="Branch Tilt" value="42" high-value="100" low-value="5" name="BranchTiltSlider" fill="true" show-input-field="true" class="VoxBotanica"/>
                 <ui:Slider label="Branch Radial Position" value="42" high-value="360" name="BranchRadialField" fill="true" show-input-field="true" class="VoxBotanica"/>
                 <ui:UnsignedIntegerField label="Trunk Height" value="3" name="TrunkHeightField" class="VoxBotanica"/>

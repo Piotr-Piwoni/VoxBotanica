@@ -1,0 +1,30 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Root/UI/Themes/MainTheme.uss?fileID=7433441132597879392&amp;guid=5aa0ca47de14d764894bd8d686369b0e&amp;type=3#MainTheme"/>
+    <ui:VisualElement class="VoxBotanica" style="flex-grow: 1; flex-direction: row;">
+        <ui:GroupBox text="Generator Settings" class="VoxBotanica" style="-unity-text-auto-size: best-fit 42px 70px; -unity-text-generator: advanced; width: 550px; max-width: 50%; min-width: 550px; align-items: stretch; align-self: flex-start; height: auto; margin-right: 0; border-top-right-radius: 0; justify-content: flex-start; max-height: 75%;">
+            <ui:ScrollView horizontal-scroller-visibility="Hidden" class="VoxBotanica" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;">
+                <ui:UnsignedIntegerField label="Iteration" value="3" name="IterationField" focusable="true" class="AutoFontSize-Fields VoxBotanica" style="max-width: none;"/>
+                <VoxBotanica.UIElements.LSystemRulesFoldout name="RulesField" title="Rules"/>
+                <ui:Slider label="Branch Tilt" value="42" high-value="100" low-value="5" name="BranchTiltSlider" fill="true" show-input-field="true" class="VoxBotanica"/>
+                <ui:Slider label="Branch Radial Position" value="42" high-value="360" name="BranchRadialField" fill="true" show-input-field="true" class="VoxBotanica"/>
+                <ui:UnsignedIntegerField label="Trunk Height" value="3" name="TrunkHeightField" class="VoxBotanica"/>
+                <ui:UnsignedIntegerField label="Max Tree Height" value="20" name="MaxHeightField" class="VoxBotanica"/>
+                <ui:UnsignedIntegerField label="Trunk Thickness" value="1" name="TrunkThicknessField" class="VoxBotanica"/>
+                <ui:EnumField label="Trunk Shape" value="Square" type="VoxBotanica.Systems.TreeGenerator+TrunkThicknessShape, Project" name="TrunkShapeField" class="VoxBotanica"/>
+                <ui:Label text="Canopy Settings" name="CanopySettingsTitle" style="-unity-text-auto-size: best-fit 26px 45px; margin-top: 30px;"/>
+                <ui:UnsignedIntegerField label="Canopy Radius" value="2" name="CanopyRadiusField" class="VoxBotanica"/>
+                <ui:UnsignedIntegerField label="Top Canopy Radius" value="2" name="TopCanopyRadiusField" class="VoxBotanica"/>
+                <VoxBotanica.UIElements.IntListFoldout title="Branch Leaf Radii " name="BranchLeafRadiiField" collapsed="true" label-title="Branch Point" min-value="0" class="VoxBotanica ResizeField" style="align-self: stretch;"/>
+                <ui:Label text="Colour Settings" name="ColourSettingsTitle" style="-unity-text-auto-size: best-fit 26px 45px; margin-top: 30px;"/>
+                <Game.UI.ColorField name="TrunkColour" label="Trunk Colour" class="VoxBotanica"/>
+                <Game.UI.ColorField name="CanopyColour" label="Canopy Colour" class="VoxBotanica"/>
+                <ui:Label text="Export Settings" name="ExportSettingsTitle" style="-unity-text-auto-size: best-fit 26px 45px; margin-top: 30px;"/>
+                <ui:TextField label="Destination Path" placeholder-text="e.g. Root/Export" hide-placeholder-on-focus="true" name="FolderPathField" class="VoxBotanica" style="margin-top: 5px;"/>
+                <ui:TextField label="Custom FIle Name" placeholder-text="e.g. Tree" hide-placeholder-on-focus="true" name="FileNameField" class="VoxBotanica"/>
+                <ui:Button text="Export" name="ExportBtn" enabled="true" class="VoxBotanica" style="align-self: center;"/>
+            </ui:ScrollView>
+        </ui:GroupBox>
+        <ui:Button text="◀" name="PanelViewBtn" class="VoxBotanica" style="height: 70px; left: 0; top: 0; margin-top: 6px; margin-right: 0; margin-bottom: 0; margin-left: 0; border-bottom-left-radius: 0; border-top-left-radius: 0;"/>
+    </ui:VisualElement>
+    <Game.UI.ColorPopup/>
+</ui:UXML>

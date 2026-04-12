@@ -4,12 +4,15 @@ using UnityEngine.UIElements;
 
 namespace VoxBotanica.Systems
 {
+using TrunkThicknessShape = TreeGenerator.TrunkThicknessShape;
+
 public class UIManager : MonoBehaviour
 {
 	[SerializeField]
 	private TreeGenerator _Generator;
 	[SerializeField]
 	private ModelExporter _Exporter;
+	private bool _ReGenerate;
 
 	private ColorField _CanopyColourField;
 	private ColorField _TrunkColourField;
@@ -75,40 +78,60 @@ public class UIManager : MonoBehaviour
 
 	private void LateUpdate()
 	{
-		// Unsigned int fields.
 		if (_IterationField.value != (uint)_Generator.LSystem.Iterations)
+		{
 			_Generator.LSystem.Iterations = (int)_IterationField.value;
-		if (_MaxHeightField.value != (uint)_Generator.MaxHeight)
+			_ReGenerate = true;
+		}
+		else if (_MaxHeightField.value != (uint)_Generator.MaxHeight)
+		{
 			_Generator.MaxHeight = _MaxHeightField.value;
+			_ReGenerate = true;
+		}
+		else if (_TrunkHeightField.value != (uint)_Generator.TrunkHeight)
+		{
+			_Generator.TrunkHeight = _TrunkHeightField.value;
+			_ReGenerate = true;
+		}
+		else if (_TrunkThicknessField.value != (uint)_Generator.TrunkThickness)
+		{
+			_Generator.TrunkThickness = (int)_TrunkThicknessField.value;
+			_ReGenerate = true;
+		}
+		else if (!Mathf.Approximately(_BranchRadialField.value,
+									  _Generator.BranchRadialPosition))
+		{
+			_Generator.BranchRadialPosition = _BranchRadialField.value;
+			_ReGenerate = true;
+		}
+		else if (!Mathf.Approximately(_BranchTiltField.value, _Generator.BranchTilt))
+		{
+			_Generator.BranchTilt = _BranchTiltField.value;
+			_ReGenerate = true;
+		}
+		else if ((TrunkThicknessShape)_TrunkShapeField.value != _Generator.TrunkShape)
+		{
+			_Generator.TrunkShape = (TrunkThicknessShape)_TrunkShapeField.value;
+			_ReGenerate = true;
+		}
+
+		// Canopy Settings.
 		if (_TopCanopyThicknessField.value != (uint)_Generator.TrunkLeafRadius)
 			_Generator.TrunkLeafRadius = (int)_TopCanopyThicknessField.value;
 		if (_TotalCanopyThicknessField.value != (uint)_Generator.LeafRadius)
 			_Generator.LeafRadius = (int)_TotalCanopyThicknessField.value;
-		if (_TrunkHeightField.value != (uint)_Generator.TrunkHeight)
-			_Generator.TrunkHeight = _TrunkHeightField.value;
-		if (_TrunkThicknessField.value != (uint)_Generator.TrunkThickness)
-			_Generator.TrunkThickness = (int)_TrunkThicknessField.value;
 
-		// Slider fields.
-		if (!Mathf.Approximately(_BranchRadialField.value,
-								 _Generator.BranchRadialPosition))
-			_Generator.BranchRadialPosition = _BranchRadialField.value;
-		if (!Mathf.Approximately(_BranchTiltField.value, _Generator.BranchTilt))
-			_Generator.BranchTilt = _BranchTiltField.value;
-
-		// Enum field.
-		var value = (TreeGenerator.TrunkThicknessShape)_TrunkShapeField.value;
-		// ReSharper disable once RedundantCheckBeforeAssignment
-		if (value != _Generator.TrunkShape)
-			_Generator.TrunkShape = value;
-
-		// Colour Fields
 		// ReSharper disable once RedundantCheckBeforeAssignment
 		if (_TrunkColourField.value != _Generator.TrunkColour)
 			_Generator.TrunkColour = _TrunkColourField.value;
 		// ReSharper disable once RedundantCheckBeforeAssignment
 		if (_CanopyColourField.value != _Generator.LeafColour)
 			_Generator.LeafColour = _CanopyColourField.value;
+
+
+		if (!_ReGenerate) return;
+		_Generator.Generate();
+		_ReGenerate = false;
 	}
 
 	private void OnEnable()

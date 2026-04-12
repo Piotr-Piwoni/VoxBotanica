@@ -464,52 +464,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &229634210
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 229634212}
-  - component: {fileID: 229634211}
-  m_Layer: 0
-  m_Name: ModelExporter
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &229634211
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 229634210}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aada6da1168c3f141af617d93b3ef6a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Project::VoxBotanica.ModelExporter
-  ExportFolderPath: W:\Projects\Engines\Unity\Abertay\[CMP400] - Honours Project\VoxBotanica\Assets\_Root\Exports
-  _ExportObject: {fileID: 1507294356}
---- !u!4 &229634212
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 229634210}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 1
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -1008,7 +962,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Project::VoxBotanica.Systems.UIManager
   _Generator: {fileID: 1507294362}
-  _Exporter: {fileID: 229634211}
+  _Exporter: {fileID: 1507294363}
 --- !u!1 &1407086792
 GameObject:
   m_ObjectHideFlags: 2
@@ -1055,6 +1009,7 @@ GameObject:
   - component: {fileID: 1507294361}
   - component: {fileID: 1507294360}
   - component: {fileID: 1507294362}
+  - component: {fileID: 1507294363}
   m_Layer: 0
   m_Name: Tree Generator
   m_TagString: Untagged
@@ -1154,7 +1109,7 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes:
-    - Name: _LSystem
+    - Name: LSystem
       Entry: 7
       Data: 0|VoxBotanica.Systems.LindenmayerSystem, Project
     - Name: Rules
@@ -1198,7 +1153,7 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: _BranchesLeafRadii
+    - Name: BranchesLeafRadii
       Entry: 7
       Data: 3|System.Collections.Generic.List`1[[System.Int32, mscorlib]], mscorlib
     - Name: 
@@ -1216,17 +1171,18 @@ MonoBehaviour:
   BranchRadialPosition: 25
   TrunkThickness: 1
   TrunkShape: 0
-  _LSystem:
+  LSystem:
     Axiom: F
     Iterations: 3
+  LeafRadius: 2
+  TrunkLeafRadius: 2
+  BranchesLeafRadii: 
+  TrunkColour: {r: 0.5450981, g: 0.2705882, b: 0.07450981, a: 1}
+  LeafColour: {r: 0.4196079, g: 0.5568628, b: 0.1372549, a: 1}
   _MeshFilter: {fileID: 0}
   _Renderer: {fileID: 0}
   _TrunkString: 
   _BranchStrings: []
-  _LeafRadius: 2
-  _TrunkLeafRadius: 2
-  _TrunkColour: {r: 0.5450981, g: 0.2705882, b: 0.07450981, a: 1}
-  _LeafColour: {r: 0.4196079, g: 0.5568628, b: 0.1372549, a: 1}
   _ShaderResource: {fileID: 0}
   _DebugTreeColour: {r: 1, g: 0, b: 1, a: 1}
   _DebugEndPointsColour: {r: 0.6, g: 0.3, b: 1, a: 1}
@@ -1235,6 +1191,21 @@ MonoBehaviour:
   _ShowGizmos: 0
   _ShowTree: 0
   _ShowEndPoints: 0
+--- !u!114 &1507294363
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1507294356}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aada6da1168c3f141af617d93b3ef6a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Project::VoxBotanica.ModelExporter
+  DestinationPath: W:\Projects\Engines\Unity\Abertay\[CMP400] - Honours Project\VoxBotanica\Assets\_Root\Exports
+  ExportFileName: 
+  _ExportObject: {fileID: 1507294356}
 --- !u!1 &1944077487
 GameObject:
   m_ObjectHideFlags: 0
@@ -1300,4 +1271,3 @@ SceneRoots:
   - {fileID: 1163995789}
   - {fileID: 82610245}
   - {fileID: 1507294358}
-  - {fileID: 229634212}

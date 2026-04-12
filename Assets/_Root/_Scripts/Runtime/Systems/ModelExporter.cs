@@ -4,6 +4,9 @@ using Autodesk.Fbx;
 using Sirenix.OdinInspector;
 using Sirenix.Utilities;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace VoxBotanica
 {
@@ -84,11 +87,14 @@ public class ModelExporter : MonoBehaviour
 			Vector3[] normals = mesh.normals;
 			Vector2[] uvs = mesh.uv;
 
+			// Vertices.
 			fbxMesh.InitControlPoints(vertices.Length);
 			for (var i = 0; i < vertices.Length; i++)
-				fbxMesh.SetControlPointAt(
-						new FbxVector4(vertices[i].x, vertices[i].y, vertices[i].z), i);
+				fbxMesh.SetControlPointAt(new FbxVector4(vertices[i].x,
+														 vertices[i].y,
+														 vertices[i].z), i);
 
+			// Normals.
 			FbxLayerElementNormal normalLayer = fbxMesh.CreateElementNormal();
 			normalLayer.SetMappingMode(FbxLayerElement.EMappingMode.eByControlPoint);
 			normalLayer.SetReferenceMode(FbxLayerElement.EReferenceMode.eDirect);
@@ -96,6 +102,7 @@ public class ModelExporter : MonoBehaviour
 			foreach (Vector3 n in normals)
 				normalLayer.GetDirectArray().Add(new FbxVector4(n.x, n.y, n.z));
 
+			// UVs.
 			FbxLayerElementUV uvLayer = fbxMesh.CreateElementUV("UVSet");
 			uvLayer.SetMappingMode(FbxLayerElement.EMappingMode.eByControlPoint);
 			uvLayer.SetReferenceMode(FbxLayerElement.EReferenceMode.eDirect);
@@ -103,10 +110,21 @@ public class ModelExporter : MonoBehaviour
 			foreach (Vector2 uv in uvs)
 				uvLayer.GetDirectArray().Add(new FbxVector2(uv.x, uv.y));
 
+			// Material layer.
 			FbxLayerElementMaterial materialLayer = fbxMesh.CreateElementMaterial();
 			materialLayer.SetMappingMode(FbxLayerElement.EMappingMode.eByPolygon);
 			materialLayer.SetReferenceMode(FbxLayerElement.EReferenceMode.eIndexToDirect);
 
+			FbxLayer layer = fbxMesh.GetLayer(0);
+			if (layer == null)
+			{
+				fbxMesh.CreateLayer();
+				layer = fbxMesh.GetLayer(0);
+			}
+
+			layer.SetMaterials(materialLayer);
+
+			// Materials.
 			Material[] materials = meshRenderer.sharedMaterials;
 			foreach (Material material in materials)
 			{
@@ -116,6 +134,7 @@ public class ModelExporter : MonoBehaviour
 									   material.GetColor(_BaseColor) :
 									   material.color;
 
+				// Convert to gamma space.
 				colour = colour.linear;
 
 				fbxMaterial.Diffuse.Set(new FbxDouble3(colour.r, colour.g, colour.b));
@@ -126,6 +145,7 @@ public class ModelExporter : MonoBehaviour
 				node.AddMaterial(fbxMaterial);
 			}
 
+			// Submeshes.
 			for (var subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
 			{
 				int[] triangles = mesh.GetTriangles(subMeshIndex);
@@ -149,6 +169,10 @@ public class ModelExporter : MonoBehaviour
 		}
 
 		Debug.Log("Exported FBX to: " + filePath);
+
+		#if UNITY_EDITOR
+		AssetDatabase.Refresh();
+		#endif
 	}
 
 	private string BuildFileName()

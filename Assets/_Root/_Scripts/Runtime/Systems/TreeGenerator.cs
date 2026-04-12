@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -93,10 +93,9 @@ public class TreeGenerator : SerializedMonoBehaviour
 		if (!_Renderer.sharedMaterials.IsNullOrEmpty())
 		{
 			Material[] materials = _Renderer.sharedMaterials;
-			materials[0].color = _TrunkColour; //< Trunk.
-			materials[1].color = _TrunkColour; //< Branches.
-			materials[2].color = _LeafColour;  //< Leaves.
-			_Renderer.sharedMaterials = materials;
+			materials[0].color = TrunkColour; //< Trunk.
+			materials[1].color = TrunkColour; //< Branches.
+			materials[2].color = LeafColour;  //< Leaves.
 		}
 
 		UpdateLeafGeneration();
@@ -389,17 +388,19 @@ public class TreeGenerator : SerializedMonoBehaviour
 
 		// Add materials based on the order of the submeshes.
 		if (!_Renderer.sharedMaterials.IsNullOrEmpty()) return;
-		var trunkMaterial = new Material(_ShaderResource);
-		var leafMaterial = new Material(_ShaderResource);
+		var trunkMaterial = new Material(_ShaderResource) { name = "TrunkMat", };
+		var branchMaterial = new Material(_ShaderResource) { name = "BranchMat", };
+		var leafMaterial = new Material(_ShaderResource) { name = "LeavesMat", };
 
-		trunkMaterial.color = _TrunkColour;
-		leafMaterial.color = _LeafColour;
+		trunkMaterial.color = TrunkColour;
+		branchMaterial.color = TrunkColour;
+		leafMaterial.color = LeafColour;
 
 		_Renderer.sharedMaterials = new[]
 		{
-				trunkMaterial, //< Trunk Mesh.
-				trunkMaterial, //< Branches Mesh.
-				leafMaterial,  //< Leaves Mesh.
+				trunkMaterial,  //< Trunk Mesh.
+				branchMaterial, //< Branches Mesh.
+				leafMaterial,   //< Leaves Mesh.
 		};
 	}
 

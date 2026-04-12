@@ -10,8 +10,11 @@
                 <ui:UnsignedIntegerField label="Max Tree Height" value="20" name="MaxHeightField" class="VoxBotanica"/>
                 <ui:UnsignedIntegerField label="Trunk Thickness" value="1" name="TrunkThicknessField" class="VoxBotanica"/>
                 <ui:EnumField label="Trunk Shape" value="Square" type="VoxBotanica.Systems.TreeGenerator+TrunkThicknessShape, Project" name="TrunkShapeField" class="VoxBotanica"/>
+                <ui:Label text="Canopy Settings" name="CanopySettingsTitle" style="-unity-text-auto-size: best-fit 26px 45px; margin-top: 30px;"/>
                 <ui:UnsignedIntegerField label="Canopy Radius" value="2" name="CanopyRadiusField" class="VoxBotanica"/>
                 <ui:UnsignedIntegerField label="Top Canopy Radius" value="2" name="TopCanopyRadiusField" class="VoxBotanica"/>
+                <VoxBotanica.UIElements.IntListFoldout title="Branch Leaf Radii " name="BranchLeafRadiiField" collapsed="true" label-title="Branch Point" min-value="0" class="VoxBotanica ResizeField" style="align-self: stretch;"/>
+                <ui:Label text="Colour Settings" name="ColourSettingsTitle" style="-unity-text-auto-size: best-fit 26px 45px; margin-top: 30px;"/>
                 <Game.UI.ColorField name="TrunkColour" label="Trunk Colour" class="VoxBotanica"/>
                 <Game.UI.ColorField name="CanopyColour" label="Canopy Colour" class="VoxBotanica"/>
                 <ui:Label text="Export Settings" name="ExportSettingsTitle" style="-unity-text-auto-size: best-fit 26px 45px; margin-top: 30px;"/>

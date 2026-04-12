@@ -51,6 +51,24 @@
     border-width: 1px;
 }
 
+.VoxBotanica .unity-foldout__input {
+    margin-left: 1px;
+    background-color: var(--primary-colour);
+    color: var(--text-colour);
+    border-width: 0;
+    -unity-text-generator: advanced;
+    -unity-text-auto-size: best-fit 24px 45px;
+}
+
+.ResizeField {
+    -unity-text-generator: advanced;
+    -unity-text-auto-size: best-fit 24px 45px;
+}
+
+.VoxBotanica .unity-foldout__input .unity-foldout__checkmark {
+    -unity-background-image-tint-color: var(--accent-colour);
+}
+
 .VoxBotanica .unity-base-slider__input {
     background-color: transparent;
     border-color: transparent;

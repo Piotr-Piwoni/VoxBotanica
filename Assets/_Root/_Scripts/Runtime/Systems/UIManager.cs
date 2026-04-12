@@ -1,6 +1,7 @@
 ﻿using Game.UI;
 using UnityEngine;
 using UnityEngine.UIElements;
+using VoxBotanica.UIElements;
 
 namespace VoxBotanica.Systems
 {
@@ -17,6 +18,7 @@ public class UIManager : MonoBehaviour
 	private ColorField _CanopyColourField;
 	private ColorField _TrunkColourField;
 	private EnumField _TrunkShapeField;
+	private IntListFoldout _BranchLeafRadiiField;
 	private Slider _BranchRadialField;
 	private Slider _BranchTiltField;
 	private TextField _DestinationFolderPathField;
@@ -69,6 +71,13 @@ public class UIManager : MonoBehaviour
 
 		ColourFieldsSetup();
 
+		_BranchLeafRadiiField = _Root.Q<IntListFoldout>("BranchLeafRadiiField");
+		_BranchLeafRadiiField.SetData(_Generator.BranchesLeafRadii,
+									  (index, value) =>
+									  {
+										  _Generator.BranchesLeafRadii[index] = value;
+									  });
+
 		// Export settings.
 		_DestinationFolderPathField = _Root.Q<TextField>("FolderPathField");
 		_FileNameField = _Root.Q<TextField>("FileNameField");
@@ -92,37 +101,44 @@ public class UIManager : MonoBehaviour
 			_Generator.LSystem.Iterations = (int)_IterationField.value;
 			_ReGenerate = true;
 		}
-		else if (_MaxHeightField.value != (uint)_Generator.MaxHeight)
+
+		if (_MaxHeightField.value != (uint)_Generator.MaxHeight)
 		{
 			_Generator.MaxHeight = _MaxHeightField.value;
 			_ReGenerate = true;
 		}
-		else if (_TrunkHeightField.value != (uint)_Generator.TrunkHeight)
+
+		if (_TrunkHeightField.value != (uint)_Generator.TrunkHeight)
 		{
 			_Generator.TrunkHeight = _TrunkHeightField.value;
 			_ReGenerate = true;
 		}
-		else if (_TrunkThicknessField.value != (uint)_Generator.TrunkThickness)
+
+		if (_TrunkThicknessField.value != (uint)_Generator.TrunkThickness)
 		{
 			_Generator.TrunkThickness = (int)_TrunkThicknessField.value;
 			_ReGenerate = true;
 		}
-		else if (!Mathf.Approximately(_BranchRadialField.value,
-									  _Generator.BranchRadialPosition))
+
+		if (!Mathf.Approximately(_BranchRadialField.value,
+								 _Generator.BranchRadialPosition))
 		{
 			_Generator.BranchRadialPosition = _BranchRadialField.value;
 			_ReGenerate = true;
 		}
-		else if (!Mathf.Approximately(_BranchTiltField.value, _Generator.BranchTilt))
+
+		if (!Mathf.Approximately(_BranchTiltField.value, _Generator.BranchTilt))
 		{
 			_Generator.BranchTilt = _BranchTiltField.value;
 			_ReGenerate = true;
 		}
-		else if ((TrunkThicknessShape)_TrunkShapeField.value != _Generator.TrunkShape)
+
+		if ((TrunkThicknessShape)_TrunkShapeField.value != _Generator.TrunkShape)
 		{
 			_Generator.TrunkShape = (TrunkThicknessShape)_TrunkShapeField.value;
 			_ReGenerate = true;
 		}
+
 
 		// Canopy Settings.
 		if (_TopCanopyThicknessField.value != (uint)_Generator.TrunkLeafRadius)
@@ -204,6 +220,7 @@ public class UIManager : MonoBehaviour
 	private void UpdateLeafSettingsFields()
 	{
 		_TopCanopyThicknessField.value = _TotalCanopyThicknessField.value;
+		_BranchLeafRadiiField.SetAllValues((int)_TotalCanopyThicknessField.value);
 	}
 }
 }

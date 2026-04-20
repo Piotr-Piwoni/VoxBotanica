@@ -84,7 +84,8 @@ public class OrbitCameraSimple : MonoBehaviour
 	{
 		float scroll = Mouse.current.scroll.ReadValue().y;
 
-		Distance -= scroll * ZoomSpeed * Time.deltaTime;
+		const float SCALE_FACTOR = 0.01f;
+		Distance *= 1f - scroll * SCALE_FACTOR * ZoomSpeed;
 		Distance = Mathf.Clamp(Distance, MinDistance, MaxDistance);
 	}
 

@@ -1,0 +1,22 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Root/UI/Themes/MainTheme.uss?fileID=7433441132597879392&amp;guid=5aa0ca47de14d764894bd8d686369b0e&amp;type=3#MainTheme"/>
+    <ui:GroupBox text="Controls" name="GroupBox" style="-unity-text-generator: advanced; -unity-text-auto-size: best-fit 30px 55px; bottom: 0; flex-direction: column; align-self: stretch; position: absolute; padding-right: 3px; margin-bottom: 5px; margin-top: 5px; margin-right: 5px; margin-left: 5px; width: 100%; -unity-font-style: normal;">
+        <ui:VisualElement style="flex-grow: 1; flex-direction: row; -unity-text-auto-size: best-fit 26px 40px;">
+            <ui:VisualElement name="FancyText" class="ResizeField VoxBotanica" style="flex-grow: 1; flex-direction: row;">
+                <ui:Label text="Use the " class="VoxBotanica"/>
+                <ui:Label text="Scroll Wheel " class="VoxBotanica important-text"/>
+                <ui:Label text="to zoom." class="VoxBotanica"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="FancyText" class="ResizeField VoxBotanica" style="flex-grow: 1; flex-direction: row;">
+                <ui:Label text="Press " class="VoxBotanica"/>
+                <ui:Label text="Alt + Left Mouse Btn " class="VoxBotanica important-text"/>
+                <ui:Label text="to rotate." class="VoxBotanica"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="FancyText" class="ResizeField VoxBotanica" style="flex-grow: 1; flex-direction: row;">
+                <ui:Label text="Press " class="VoxBotanica"/>
+                <ui:Label text="Alt + Middle Mouse Btn " class="VoxBotanica important-text"/>
+                <ui:Label text="to pan." class="VoxBotanica"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:GroupBox>
+</ui:UXML>

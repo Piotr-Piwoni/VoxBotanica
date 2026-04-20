@@ -3,6 +3,30 @@ using UnityEngine.InputSystem;
 
 namespace VoxBotanica.Components
 {
+/// <summary>
+///     Simple orbit-style camera controller that allows rotating, panning, and zooming around a target.
+///     <para>
+///         <para>
+///             Controls:
+///             <list type="bullet">
+///                 <item>
+///                     <description>Alt + Left Mouse: Orbit around the pivot.</description>
+///                 </item>
+///                 <item>
+///                     <description>Alt + Middle Mouse: Pan the pivot position.</description>
+///                 </item>
+///                 <item>
+///                     <description>Scroll Wheel: Zoom in and out.</description>
+///                 </item>
+///                 <item>
+///                     <description>F key: Reset pivot to target and set default distance.</description>
+///                 </item>
+///             </list>
+///         </para>
+///     </para>
+///     The camera maintains a pivot point (initially the target position) and orbits around it using
+///     yaw and pitch rotations. Distance controls how far the camera is from the pivot.
+/// </summary>
 public class OrbitCameraSimple : MonoBehaviour
 {
 	public Transform Target;
@@ -22,7 +46,10 @@ public class OrbitCameraSimple : MonoBehaviour
 	private float _Yaw;
 	private Vector3 _Pivot;
 
-
+	/// <summary>
+	///     Initialises the camera pivot and rotation based on the current transform and target.
+	///     Disables the component if no target is assigned.
+	/// </summary>
 	private void Start()
 	{
 		if (!Target)
@@ -38,6 +65,10 @@ public class OrbitCameraSimple : MonoBehaviour
 		_Pitch = angles.x;
 	}
 
+	/// <summary>
+	///     Handles input and updates camera behaviour after all other updates.
+	///     Resets pivot when pressing F, then processes rotation, panning, zoom, and positioning.
+	/// </summary>
 	private void LateUpdate()
 	{
 		if (Keyboard.current.fKey.isPressed)
@@ -52,6 +83,10 @@ public class OrbitCameraSimple : MonoBehaviour
 		UpdateCameraPosition();
 	}
 
+	/// <summary>
+	///     Handles camera panning using Alt + Middle Mouse input.
+	///     Moves the pivot point relative to the camera's right and up vectors.
+	/// </summary>
 	private void HandlePan()
 	{
 		if (!Keyboard.current.leftAltKey.isPressed ||
@@ -66,6 +101,10 @@ public class OrbitCameraSimple : MonoBehaviour
 		_Pivot += move;
 	}
 
+	/// <summary>
+	///     Handles camera rotation using Alt + Left Mouse input.
+	///     Adjusts yaw and pitch while clamping pitch to defined limits.
+	/// </summary>
 	private void HandleRotation()
 	{
 		// Alt + Left Mouse.
@@ -80,6 +119,10 @@ public class OrbitCameraSimple : MonoBehaviour
 		_Pitch = Mathf.Clamp(_Pitch, MinPitch, MaxPitch);
 	}
 
+	/// <summary>
+	///     Handles zooming using the mouse scroll wheel.
+	///     Adjusts distance with scaling and clamps it within valid bounds.
+	/// </summary>
 	private void HandleZoom()
 	{
 		float scroll = Mouse.current.scroll.ReadValue().y;
@@ -89,6 +132,10 @@ public class OrbitCameraSimple : MonoBehaviour
 		Distance = Mathf.Clamp(Distance, MinDistance, MaxDistance);
 	}
 
+	/// <summary>
+	///     Updates the camera position and orientation based on pivot, rotation, and distance.
+	///     Positions the camera behind the pivot and makes it look at the pivot point.
+	/// </summary>
 	private void UpdateCameraPosition()
 	{
 		Quaternion rotation = Quaternion.Euler(_Pitch, _Yaw, 0);

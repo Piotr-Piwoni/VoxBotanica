@@ -18,6 +18,37 @@ namespace VoxBotanica.Systems
 {
 using TurtleState = TurtleState<Vector3>;
 
+/// <summary>
+///     Final procedural tree generator built on an L-system and voxel-based rendering pipeline.
+///     <para>
+///         This system:
+///         <list type="bullet">
+///             <item>
+///                 <description>Uses a Lindenmayer System to generate structural strings.</description>
+///             </item>
+///             <item>
+///                 <description>Parses trunk and branch data separately for controlled growth.</description>
+///             </item>
+///             <item>
+///                 <description>Generates voxel data for trunk, branches, and leaves.</description>
+///             </item>
+///             <item>
+///                 <description>Merges voxel meshes into optimised submeshes for rendering.</description>
+///             </item>
+///             <item>
+///                 <description>Supports dynamic updates to canopy and leaf distribution.</description>
+///             </item>
+///         </list>
+///     </para>
+///     <para>
+///         The generator distinguishes between trunk and branches, allowing independent control
+///         over thickness, direction, and leaf generation. Leaves are generated as spherical
+///         clusters at branch endpoints and trunk tops.
+///     </para>
+///     <para>
+///         Editor-only debug tools are included for visualising the L-system structure and branch endpoints.
+///     </para>
+/// </summary>
 [HideMonoScript, RequireComponent(typeof(MeshFilter), typeof(MeshRenderer)),]
 public class TreeGenerator : SerializedMonoBehaviour
 {
@@ -121,6 +152,13 @@ public class TreeGenerator : SerializedMonoBehaviour
 		_OldBranchesLeafRadii.Clear();
 	}
 
+	/// <summary>
+	///     Generates the full tree from the current configuration.
+	///     <para>
+	///         Executes L-system generation, parsing, voxel generation, leaf creation,
+	///         and final mesh rendering.
+	///     </para>
+	/// </summary>
 	[Button]
 	public void Generate()
 	{
@@ -141,6 +179,10 @@ public class TreeGenerator : SerializedMonoBehaviour
 		Render();
 	}
 
+	/// <summary>
+	///     Adds trunk voxels at a given position based on trunk thickness and shape.
+	/// </summary>
+	/// <param name="position">World position for trunk voxel placement.</param>
 	private void AddTrunkVoxels(Vector3 position)
 	{
 		Vector3Int center = Vector3Int.RoundToInt(position);
@@ -151,6 +193,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 		for (int x = start; x <= end; x++)
 		for (int z = start; z <= end; z++)
 		{
+			// Handle the maths differently for circular trunks.
 			if (TrunkShape == TrunkThicknessShape.Circular && TrunkThickness > 1)
 			{
 				float radius = (TrunkThickness - 1) / 2f;
@@ -162,6 +205,12 @@ public class TreeGenerator : SerializedMonoBehaviour
 		}
 	}
 
+	/// <summary>
+	///     Generates a branch from a parsed L-system segment.
+	/// </summary>
+	/// <param name="sententialForm">Branch-specific L-system string.</param>
+	/// <param name="trunkPosition">Starting position on the trunk.</param>
+	/// <param name="direction">Initial growth direction.</param>
 	private void GenerateBranch(string sententialForm,
 			Vector3 trunkPosition,
 			Vector3 direction)
@@ -176,29 +225,29 @@ public class TreeGenerator : SerializedMonoBehaviour
 		foreach (char c in sententialForm.TakeWhile(_ => !(position.y >= MaxHeight)))
 			switch (c)
 			{
-			case 'F':
+			case 'F': //< "Place" a new block and move towards the target direction.
 			{
 				Vector3 next = position + direction * _LENGTH;
 				branch.Add(Vector3Int.RoundToInt(next));
 				position = next;
 				break;
 			}
-			case '+':
+			case '+': //< Tilt clockwise.
 			{
 				Quaternion rot = Quaternion.Euler(0f, 0f, BranchTilt);
 				direction = rot * direction;
 				break;
 			}
-			case '-':
+			case '-': //< Tilt anti-clockwise.
 			{
 				Quaternion rot = Quaternion.Euler(0f, 0f, -BranchTilt);
 				direction = rot * direction;
 				break;
 			}
-			case '[':
+			case '[': //< Start a new branch.
 				stack.Push(new TurtleState(position, direction));
 				break;
-			case ']':
+			case ']': //< End the current branch and return to the trunk.
 				if (stack.Count > 0)
 				{
 					TurtleState state = stack.Pop();
@@ -209,12 +258,16 @@ public class TreeGenerator : SerializedMonoBehaviour
 				break;
 			}
 
-		// Add the constructed branch.
+		// Add the constructed branch and it associated leaf radius value.
 		_Branches.Add(branch);
-		// Add a leaf radius value for this branch.
 		BranchesLeafRadii.Add(LeafRadius);
 	}
 
+	/// <summary>
+	///     Generates a spherical cluster of leaf voxels.
+	/// </summary>
+	/// <param name="center">Centre position of the cluster.</param>
+	/// <param name="radius">Radius of the cluster.</param>
 	private void GenerateCluster(Vector3Int center, int radius)
 	{
 		for (int x = -radius; x <= radius; x++)
@@ -225,7 +278,6 @@ public class TreeGenerator : SerializedMonoBehaviour
 			if (offset.sqrMagnitude > radius * radius) continue;
 
 			Vector3Int leafPos = center + offset;
-
 			if (leafPos.y < TrunkHeight) continue;
 
 			// Avoid overwriting trunk and branch.
@@ -236,16 +288,23 @@ public class TreeGenerator : SerializedMonoBehaviour
 		}
 	}
 
+	/// <summary>
+	///     Generates all leaf voxels for trunk and branches.
+	/// </summary>
+	/// <remarks>
+	///     Uses trunk top and branch endpoints as cluster origins.
+	/// </remarks>
 	private void GenerateLeaves()
 	{
 		_LeafData.Clear();
 
+		// Generate for the top of the canopy.
 		int maxY = _TrunkData.Positions.Last().y;
 		foreach (Vector3Int position in _TrunkData.Positions
 												  .Where(position => position.y == maxY))
 			GenerateCluster(position, TrunkLeafRadius);
 
-
+		// Generate for the branches.
 		for (var i = 0; i < _Branches.Count; i++)
 		{
 			List<Vector3Int> branch = _Branches[i];
@@ -253,6 +312,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 			GenerateCluster(branch.Last(), BranchesLeafRadii[i]);
 		}
 
+		// Create meshes for each leaf block.
 		foreach (Vector3 pos in _LeafData.Positions)
 			_LeafData.Add(new Block(pos, _LeafData.Positions, BlockType.Dirt));
 
@@ -262,10 +322,12 @@ public class TreeGenerator : SerializedMonoBehaviour
 			_OldBranchesLeafRadii = new List<int>(BranchesLeafRadii);
 	}
 
+	/// <summary>
+	///     Generates trunk and branch voxel positions from the parsed trunk string.
+	/// </summary>
 	private void GenerateVoxels()
 	{
-		if (string.IsNullOrEmpty(_TrunkString))
-			return;
+		if (string.IsNullOrEmpty(_TrunkString)) return;
 
 		Vector3 position = Vector3.zero;
 		Vector3 direction = Vector3.up.normalized;
@@ -277,7 +339,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 		foreach (char c in _TrunkString.TakeWhile(c => !(position.y >= MaxHeight)))
 			switch (c)
 			{
-			case 'F':
+			case 'F': //< "Place" a new block and move towards the target direction.
 			{
 				// Compute next position along the current direction.
 				Vector3 next = position + direction * _LENGTH;
@@ -293,7 +355,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 				position = next;
 				break;
 			}
-			case 'B':
+			case 'B': //< Start generate a branch.
 			{
 				if (position.y < TrunkHeight) break;
 
@@ -327,6 +389,12 @@ public class TreeGenerator : SerializedMonoBehaviour
 			}
 	}
 
+	/// <summary>
+	///     Parses the L-system output into trunk and branch segments.
+	/// </summary>
+	/// <remarks>
+	///     Replaces branch segments with a placeholder and stores them separately.
+	/// </remarks>
 	private void ParseSystem()
 	{
 		_TrunkString = string.Empty;
@@ -336,42 +404,40 @@ public class TreeGenerator : SerializedMonoBehaviour
 		var depth = 0;
 		var currentBranch = string.Empty;
 
+		// Takes into account nested branches by doing a depth search.
 		foreach (char c in LSystem.SententialForm)
 		{
 			switch (c)
 			{
-			case '[':
+			case '[': //< Found a start of a branch.
 			{
 				if (depth == 0)
 				{
 					_TrunkString += BRANCH_SYMBOL;
 					currentBranch = "[";
 				}
-				else
-					currentBranch += c;
+				else currentBranch += c;
 
 				depth++;
 				continue;
 			}
-			case ']':
+			case ']': //< Found the end of a branch.
 			{
 				depth--;
 				currentBranch += ']';
-
-				if (depth == 0)
-					_BranchStrings.Add(currentBranch);
-
+				if (depth == 0) _BranchStrings.Add(currentBranch);
 				continue;
 			}
 			}
 
-			if (depth == 0)
-				_TrunkString += c;
-			else
-				currentBranch += c;
+			if (depth == 0) _TrunkString += c;
+			else currentBranch += c;
 		}
 	}
 
+	/// <summary>
+	///     Builds and assigns the final mesh from trunk, branch, and leaf voxel data.
+	/// </summary>
 	private void Render()
 	{
 		_MeshFilter.sharedMesh.Clear();
@@ -408,10 +474,18 @@ public class TreeGenerator : SerializedMonoBehaviour
 		};
 	}
 
+
+	/// <summary>
+	///     Updates leaf generation when canopy-related values change.
+	/// </summary>
+	/// <remarks>
+	///     Ensures values remain valid and triggers regeneration when needed.
+	/// </remarks>
 	private void UpdateLeafGeneration()
 	{
 		var hasChanged = false;
 
+		// Fist check if any leaf radius of a branch changed.
 		int count = Mathf.Min(BranchesLeafRadii.Count, _OldBranchesLeafRadii.Count);
 		for (var i = 0; i < count; i++)
 		{
@@ -424,6 +498,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 			hasChanged = true;
 		}
 
+		// Secondary, check if the top canopy radius has changed.
 		if (_OldTrunkLeafRadius != TrunkLeafRadius)
 		{
 			TrunkLeafRadius = Mathf.Clamp(TrunkLeafRadius, 0, int.MaxValue);
@@ -431,6 +506,8 @@ public class TreeGenerator : SerializedMonoBehaviour
 			hasChanged = true;
 		}
 
+		// Lastly, if the total canopy radius has changed, propagate that to
+		// the other radii parameters.
 		if (LeafRadius != _OldLeafRadius)
 		{
 			LeafRadius = Mathf.Clamp(LeafRadius, 0, int.MaxValue);
@@ -453,6 +530,12 @@ public class TreeGenerator : SerializedMonoBehaviour
 		Render();
 	}
 
+	/// <summary>
+	///     Converts voxel position data into renderable block data.
+	/// </summary>
+	/// <remarks>
+	///     Applies offsets and generates mesh data for trunk and branches.
+	/// </remarks>
 	private void UpdateVoxelData()
 	{
 		// Offset the branches based on the trunk thickness.
@@ -515,7 +598,7 @@ public class TreeGenerator : SerializedMonoBehaviour
 		Square,
 	}
 
-
+// For Debugging.
 	#if UNITY_EDITOR
 	[SerializeField]
 	private Color _DebugTreeColour = Color.magenta;

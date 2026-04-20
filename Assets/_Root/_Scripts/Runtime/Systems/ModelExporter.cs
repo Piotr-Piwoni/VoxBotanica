@@ -11,6 +11,28 @@ using UnityEditor;
 
 namespace VoxBotanica
 {
+/// <summary>
+///     Provides functionality to export a Unity <see cref="GameObject"/> with a mesh
+///     into an FBX file using the Autodesk FBX SDK.
+///     <para>
+///         The exporter:
+///         <list type="bullet">
+///             <item>
+///                 <description>Extracts mesh data (vertices, normals, UVs, and submeshes).</description>
+///             </item>
+///             <item>
+///                 <description>Converts Unity materials into FBX-compatible materials.</description>
+///             </item>
+///             <item>
+///                 <description>Writes the resulting data into a valid .fbx file on disk.</description>
+///             </item>
+///         </list>
+///     </para>
+///     <para>
+///         If no destination path is provided, a default export folder is created
+///         alongside the project directory.
+///     </para>
+/// </summary>
 public class ModelExporter : MonoBehaviour
 {
 	private static readonly int _BaseColor = Shader.PropertyToID("_BaseColor");
@@ -37,6 +59,13 @@ public class ModelExporter : MonoBehaviour
 	}
 
 
+	/// <summary>
+	///     Exports the assigned <see cref="ExportObject"/> to an FBX file.
+	///     <para>
+	///         Validates required components, constructs an FBX scene,
+	///         converts mesh and material data, and writes the file to disk.
+	///     </para>
+	/// </summary>
 	[Button]
 	public void Export()
 	{
@@ -175,6 +204,14 @@ public class ModelExporter : MonoBehaviour
 		#endif
 	}
 
+	/// <summary>
+	///     Builds a valid file name for the exported FBX.
+	///     <para>
+	///         Uses <see cref="ExportFileName"/> if provided; otherwise falls back to
+	///         the export object's name. Invalid file name characters are removed.
+	///     </para>
+	/// </summary>
+	/// <returns>A sanitised file name with the .fbx extension.</returns>
 	private string BuildFileName()
 	{
 		string baseName = string.IsNullOrWhiteSpace(ExportFileName) ?
@@ -189,6 +226,15 @@ public class ModelExporter : MonoBehaviour
 		return baseName + ".fbx";
 	}
 
+	/// <summary>
+	///     Resolves the final export directory path.
+	///     <para>
+	///         If <see cref="DestinationPath"/> is empty, a default folder is created
+	///         next to the project root. Relative paths are resolved against the project root,
+	///         while absolute paths are used directly.
+	///     </para>
+	/// </summary>
+	/// <returns>The absolute directory path where the FBX will be written.</returns>
 	private string GetResolvedExportDirectory()
 	{
 		if (string.IsNullOrWhiteSpace(DestinationPath))

@@ -135,3 +135,14 @@
 .VoxBotanica .unity-scroll-view__content-and-vertical-scroll-container .unity-base-slider__drag-container {
     border-width: 0;
 }
+
+.VoxBotanica .important-text {
+    color: var(--accent-colour);
+    -unity-font-style: bold;
+}
+
+#FancyText {
+    -unity-text-generator: advanced;
+    -unity-text-auto-size: best-fit 24px 37px;
+    margin: 1px;
+}

@@ -6,6 +6,33 @@ using VoxBotanica.Utilities;
 
 namespace VoxBotanica.Systems
 {
+/// <summary>
+///     Prototype cube/voxel generator used to experiment with runtime mesh generation.
+///     <para>
+///         This system was created to test and validate block rendering logic imported from
+///         the VoxelWorld project, where cube meshes are generated procedurally at runtime.
+///     </para>
+///     <para>
+///         The system:
+///         <list type="bullet">
+///             <item>
+///                 <description>Tracks voxel positions using a shared BlockData container.</description>
+///             </item>
+///             <item>
+///                 <description>Creates individual cube blocks at given positions.</description>
+///             </item>
+///             <item>
+///                 <description>Rebuilds and merges meshes into a single optimised mesh.</description>
+///             </item>
+///             <item>
+///                 <description>Supports generating simple voxel chunks for testing.</description>
+///             </item>
+///         </list>
+///     </para>
+///     <para>
+///         This prototype was later integrated into the main tree generator for efficient voxel rendering.
+///     </para>
+/// </summary>
 [HideMonoScript]
 public class CubeGen : SerializedMonoBehaviour
 {
@@ -34,6 +61,14 @@ public class CubeGen : SerializedMonoBehaviour
 		BlockData.Clear();
 	}
 
+	/// <summary>
+	///     Creates a cube at the specified position and rebuilds the combined mesh.
+	///     <para>
+	///         Prevents duplicate cubes and regenerates all block meshes before merging them
+	///         into a single mesh for rendering.
+	///     </para>
+	/// </summary>
+	/// <param name="position">Optional grid position for the cube; defaults to inspector position.</param>
 	[Button]
 	private void CreateCube(Vector3Int? position = null)
 	{
@@ -55,6 +90,12 @@ public class CubeGen : SerializedMonoBehaviour
 		_MeshFilter.sharedMesh = finalMesh;
 	}
 
+	/// <summary>
+	///     Generates a full chunk of cubes based on the configured chunk size.
+	///     <para>
+	///         Iterates over a 3D grid and creates cubes at each position.
+	///     </para>
+	/// </summary>
 	[Button]
 	private void GenerateChunk()
 	{

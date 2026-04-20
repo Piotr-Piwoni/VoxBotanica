@@ -10,6 +10,61 @@ namespace VoxBotanica.Systems
 {
 using TurtleState = TurtleState<Vector3>;
 
+/// <summary>
+///     Prototype L-system based tree generator that creates voxel-based trees using a turtle graphics approach.
+///     <para>
+///         The system:
+///         <list type="bullet">
+///             <item>
+///                 <description>Expands an L-system string from an axiom using rewrite rules.</description>
+///             </item>
+///             <item>
+///                 <description>Interprets the string as turtle instructions to simulate growth.</description>
+///             </item>
+///             <item>
+///                 <description>Generates voxel positions for trunk and branches.</description>
+///             </item>
+///             <item>
+///                 <description>Instantiates cube prefabs to visualise the resulting structure.</description>
+///             </item>
+///         </list>
+///     </para>
+///     <para>
+///         Turtle command behaviour:
+///         <list type="bullet">
+///             <item>
+///                 <description>'F' moves forward and places a voxel.</description>
+///             </item>
+///             <item>
+///                 <description>'+' and '-' rotate the turtle after trunk height is reached.</description>
+///             </item>
+///             <item>
+///                 <description>'[' saves the current position and direction.</description>
+///             </item>
+///             <item>
+///                 <description>']' restores the last saved state to form branches.</description>
+///             </item>
+///         </list>
+///     </para>
+///     <para>
+///         Additional behaviour:
+///         <list type="bullet">
+///             <item>
+///                 <description>Growth is limited by a maximum height constraint.</description>
+///             </item>
+///             <item>
+///                 <description>Branch voxels are tracked separately for leaf generation.</description>
+///             </item>
+///             <item>
+///                 <description>Leaves can be generated as clusters or spherical volumes at branch endpoints.</description>
+///             </item>
+///         </list>
+///     </para>
+///     <para>
+///         This implementation is an early prototype and prioritises simplicity over performance,
+///         using direct instantiation and basic traversal algorithms.
+///     </para>
+/// </summary>
 [HideMonoScript]
 public class OldTreeGenerator : MonoBehaviour
 {
@@ -125,6 +180,13 @@ public class OldTreeGenerator : MonoBehaviour
 	}
 
 
+	/// <summary>
+	///     Generates the tree from the current L-system configuration.
+	///     <para>
+	///         Clears previous data, generates the L-system string, converts it to voxel positions,
+	///         and spawns the voxel instances.
+	///     </para>
+	/// </summary>
 	[Button]
 	public void Generate()
 	{
@@ -148,6 +210,12 @@ public class OldTreeGenerator : MonoBehaviour
 			Destroy(child.gameObject);
 	}
 
+	/// <summary>
+	///     Generates clustered leaf volumes based on branch voxel groups.
+	///     <para>
+	///         Uses flood-fill to identify branches and groups them into clusters based on LeafDensity.
+	///     </para>
+	/// </summary>
 	[Button("Spawn Leaves")]
 	private void GenerateLeaves()
 	{
@@ -261,6 +329,13 @@ public class OldTreeGenerator : MonoBehaviour
 		}
 	}
 
+	/// <summary>
+	///     Expands the L-system string based on the axiom, rules, and iteration count.
+	///     <para>
+	///         Each symbol is replaced according to the rules dictionary; unknown symbols are preserved.
+	///     </para>
+	/// </summary>
+	/// <returns>The generated L-system string.</returns>
 	private string GenerateLSystem()
 	{
 		string result = Axiom;
@@ -280,6 +355,12 @@ public class OldTreeGenerator : MonoBehaviour
 		return result;
 	}
 
+	/// <summary>
+	///     Converts the generated L-system string into voxel positions.
+	///     <para>
+	///         Interprets the string using turtle logic and separates trunk and branch voxels.
+	///     </para>
+	/// </summary>
 	private void GenerateVoxelsFromString()
 	{
 		if (string.IsNullOrEmpty(_CurrentString))
@@ -366,6 +447,14 @@ public class OldTreeGenerator : MonoBehaviour
 		}
 	}
 
+	/// <summary>
+	///     Generates a spherical cluster of voxels at a given position.
+	///     <para>
+	///         Iterates over a cubic region and instantiates voxels within a radius.
+	///     </para>
+	/// </summary>
+	/// <param name="centre">Centre position of the sphere.</param>
+	/// <param name="radius">Radius of the sphere.</param>
 	private void GenerateVoxelSphere(Vector3 centre, int radius = 3)
 	{
 		int r2 = radius * radius;
@@ -384,6 +473,12 @@ public class OldTreeGenerator : MonoBehaviour
 		}
 	}
 
+	/// <summary>
+	///     Alternative leaf generation method using branch endpoints.
+	///     <para>
+	///         Places spherical leaf clusters at each detected branch end.
+	///     </para>
+	/// </summary>
 	[Button("Spawn Leaves V2")]
 	private void GenLeavesV2()
 	{
@@ -394,6 +489,13 @@ public class OldTreeGenerator : MonoBehaviour
 			GenerateVoxelSphere(EndPoint, (int)LeafThickness);
 	}
 
+	/// <summary>
+	///     Identifies end positions of branches from the L-system string.
+	///     <para>
+	///         Uses turtle traversal and records positions when branches terminate.
+	///     </para>
+	/// </summary>
+	/// <returns>List of branch endpoint positions.</returns>
 	private List<Vector3Int> GetBranchEndPositions()
 	{
 		var branchEnds = new List<Vector3Int>();
@@ -434,6 +536,12 @@ public class OldTreeGenerator : MonoBehaviour
 	}
 
 
+	/// <summary>
+	///     Instantiates voxel prefabs for trunk and branch positions.
+	///     <para>
+	///         Applies appropriate colouring for bark.
+	///     </para>
+	/// </summary>
 	private void SpawnVoxels()
 	{
 		if (!_VoxelPrefab)
